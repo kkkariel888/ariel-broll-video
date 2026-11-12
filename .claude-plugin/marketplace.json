@@ -7,7 +7,7 @@
       "name": "broll-video-maker",
       "source": "./plugins/broll-video-maker",
       "description": "给口播视频配代码动画 B-roll：审错别字、仿 Word 标黄、逐帧审稿、对齐语速、出片。Claude 和 Codex 通用。",
-      "version": "1.0.0"
+      "version": "1.0.1"
     }
   ]
 }
