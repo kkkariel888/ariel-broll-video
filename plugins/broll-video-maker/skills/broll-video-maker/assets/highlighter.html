@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>逐字稿标黄</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 仿 Word「开始」选项卡：浅灰功能区 + 白纸 + 荧光黄，操作色用 Word 的深蓝 */
+  --ribbon:#f3f2f1;
+  --desk:#e9e8e6;
+  --paper:#ffffff;
+  --ink:#201f1e;
+  --muted:#605e5c;
+  --rule:#d2d0ce;
+  --accent:#2b579a;
+  --accent-ink:#ffffff;
+  --hl:#ffff00;
+  --hl-ink:#201f1e;
+  --pressed:#c8c6c4;
+  --ghost:#b59f00;
+  --font-body:"Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ribbon:#292827; --desk:#1b1a19; --paper:#252423; --ink:#f3f2f1; --muted:#b3b0ad; --rule:#3b3a39;
+    --accent:#7aa7e8; --accent-ink:#11161f; --hl:#e6e600; --hl-ink:#1b1a19; --pressed:#484644; --ghost:#d8c400;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ribbon:#292827; --desk:#1b1a19; --paper:#252423; --ink:#f3f2f1; --muted:#b3b0ad; --rule:#3b3a39;
+  --accent:#7aa7e8; --accent-ink:#11161f; --hl:#e6e600; --hl-ink:#1b1a19; --pressed:#484644; --ghost:#d8c400;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--desk);color:var(--ink);font-family:var(--font-body);font-size:16px}
+.ribbon{position:sticky;top:0;z-index:5;background:var(--ribbon);border-bottom:1px solid var(--rule)}
+.tabs{display:flex;gap:2px;padding:6px 12px 0;font-size:13px;color:var(--muted)}
+.tabs span{padding:4px 10px}
+.tabs .on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:500}
+.groups{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;padding:6px 8px 4px}
+.grp{display:flex;flex-direction:column;align-items:center;padding:0 10px;border-right:1px solid var(--rule)}
+.grp:last-child{border-right:none}
+.grp .row{display:flex;gap:2px;align-items:center;min-height:40px}
+.grp .lbl{font-size:11px;color:var(--muted);padding:2px 0 0}
+.tb{font:inherit;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:44px;padding:4px 6px;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--ink);cursor:pointer}
+.tb:hover{background:var(--paper);border-color:var(--rule)}
+.tb[aria-pressed="true"]{background:var(--pressed);border-color:var(--rule)}
+.tb:disabled{opacity:.4;cursor:default;background:transparent;border-color:transparent}
+.tb:focus-visible,.ok:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tb svg{width:22px;height:22px}
+.tb small{font-size:11.5px;white-space:nowrap}
+.count{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:96px}
+.count b{font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+.count span{font-size:11.5px;color:var(--muted)}
+.ok{font:inherit;font-size:14px;font-weight:500;background:var(--accent);color:var(--accent-ink);border:none;border-radius:4px;padding:9px 16px;cursor:pointer;align-self:center}
+.status{font-size:12.5px;color:var(--muted);padding:2px 18px 6px}
+.status.done{color:var(--accent);font-weight:500}
+.page{padding:22px 16px 90px}
+.sheet{max-width:794px;margin:0 auto;background:var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.18);padding:64px clamp(20px,9vw,96px) 80px;min-height:60vh}
+h1{font-size:22px;margin:0 0 4px;text-wrap:balance}
+.tip{font-size:13px;color:var(--muted);margin:0 0 26px;line-height:1.75}
+.tip kbd{font:inherit;font-size:12px;border:1px solid var(--rule);border-radius:3px;padding:0 4px}
+h2{font-size:14px;color:var(--muted);font-weight:700;margin:26px 0 6px}
+.doc p{margin:0 0 12px;line-height:1.95;font-size:16.5px}
+.doc mark{background:var(--hl);color:var(--hl-ink);padding:0}
+.doc mark[data-no]::before{content:attr(data-no);font-size:10.5px;font-weight:700;background:var(--ink);color:var(--paper);border-radius:3px;padding:1px 4px;margin-right:3px;vertical-align:2px;user-select:none}
+.doc p[data-time]::before{content:attr(data-time);display:block;font-size:11px;color:var(--muted);line-height:1.4;font-variant-numeric:tabular-nums;user-select:none}
+.doc .pick{background:color-mix(in srgb,var(--accent) 22%,transparent);outline:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+.doc .ghost{text-decoration:underline dotted var(--ghost) 2px;text-underline-offset:5px}
+.doc.pen{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M4 20l3-1 11-11-2-2L5 17z' fill='%23ffff00' stroke='%23201f1e' stroke-width='1.3'/%3E%3C/svg%3E") 2 22,text}
+.doc.eraser{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='5' y='8' width='14' height='9' rx='2' transform='rotate(-35 12 12)' fill='%23ffffff' stroke='%23201f1e' stroke-width='1.3'/%3E%3C/svg%3E") 4 20,text}
+.mini{position:absolute;z-index:10;display:none;gap:2px;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.mini button{font:inherit;font-size:13px;border:none;background:transparent;color:var(--ink);padding:5px 9px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.mini button:hover{background:var(--ribbon)}
+.mini i{display:inline-block;width:14px;height:14px;background:var(--hl);border:1px solid var(--rule)}
+@media (max-width:520px){.grp{padding:0 4px}.tb{min-width:38px}.tb small{font-size:10.5px}}
+</style>
+</head>
+<body>
+<header class="ribbon">
+  <div class="tabs"><span>文件</span><span class="on">开始</span><span>插入</span><span>审阅</span></div>
+  <div class="groups">
+    <div class="grp"><div class="row">
+      <button class="tb" id="undo" type="button" title="撤销 (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 7H4V2"/><path d="M4 7c2-3 5-4 8-4a8 8 0 010 16H8"/></svg><small>撤销</small></button>
+      <button class="tb" id="redo" type="button" title="重做 (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 7h5V2"/><path d="M20 7c-2-3-5-4-8-4a8 8 0 000 16h4"/></svg><small>重做</small></button>
+    </div><div class="lbl">撤销</div></div>
+    <div class="grp"><div class="row">
+      <button class="tb" id="pen" type="button" aria-pressed="false" title="文本突出显示颜色：先选中文字再点（按住 Ctrl/⌘ 可以跳着选好几处）；不选文字直接点，就变成荧光笔"><svg viewBox="0 0 24 24"><path d="M5 15l3-1 9-9-2-2-9 9z" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="19" width="20" height="4" fill="var(--hl)" stroke="var(--rule)"/></svg><small>突出显示</small></button>
+      <button class="tb" id="eraser" type="button" aria-pressed="false" title="无颜色：先选中文字再点；不选文字直接点，就变成橡皮擦"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 15l3-1 9-9-2-2-9 9z"/><rect x="2" y="19" width="20" height="4"/><path d="M3 22L21 20"/></svg><small>无颜色</small></button>
+      <button class="tb" id="clear" type="button" title="清空所有标黄（可以撤销）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M9 6V4h6v2M6 6l1 15h10l1-15"/></svg><small>清空所有标黄</small></button>
+      <button class="tb" id="reset" type="button" title="回到 AI 一开始的建议"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l2.2 5.3L20 9l-4.4 3.8L17 19l-5-3.2L7 19l1.4-6.2L4 9l5.8-.7z"/></svg><small>恢复 AI 建议</small></button>
+    </div><div class="lbl">字体</div></div>
+    <div class="grp"><div class="row">
+      <div class="count"><b id="n">0</b><span>处已标黄</span></div>
+      <button class="tb" id="copy" type="button" title="复制标黄结果，粘贴给 AI"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="8" y="8" width="12" height="13" rx="1"/><path d="M16 8V3H4v13h4"/></svg><small>复制结果</small></button>
+      <button class="ok" id="ok" type="button">确认标黄</button>
+    </div><div class="lbl">完成</div></div>
+  </div>
+  <div class="status" id="status">正在连接…</div>
+</header>
+
+<main class="page"><article class="sheet">
+  <h1 id="ttl"></h1>
+  <p class="tip">每段上方的小字是它在视频里的时间。和 Word 一样：<b>先选中文字，再点「突出显示」</b>就标黄；选中后点「无颜色」就去掉。不选文字直接点「突出显示」，鼠标会变成荧光笔，直接划过文字就标黄，按 <kbd>Esc</kbd> 退出。<b>跳着选好几处</b>：按住 <kbd>Ctrl</kbd>（Mac 按 <kbd>⌘</kbd>）再一处一处划选，选好后点一次「突出显示」全部标黄。<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> 撤销。AI 建议过、被你去掉的地方会留一条虚线。</p>
+  <div class="doc" id="doc"></div>
+</article></main>
+
+<div class="mini" id="mini"><button type="button" id="miniMark"><i></i>突出显示</button><button type="button" id="miniClear">无颜色</button></div>
+
+<script>
+const DOC = __DATA__;
+/* DOC = {title, blocks:[{type:"h"|"p", text, hl:[[s,e]...], sug:[[s,e]...]}]} */
+
+const docEl=document.getElementById("doc");
+document.getElementById("ttl").textContent=DOC.title;
+const paras=[]; // {el,text}
+const bits=[];  // per para Uint8Array of highlight
+const sugBits=[];
+const pick=[];  // 按住 Ctrl/⌘ 跳着选中、还没标黄的地方
+DOC.blocks.forEach(b=>{
+  if(b.type==="h"){const h=document.createElement("h2"); h.textContent=b.text; docEl.appendChild(h); return;}
+  const p=document.createElement("p"); p.dataset.pi=paras.length; if(b.time)p.dataset.time=b.time; docEl.appendChild(p);
+  const hl=new Uint8Array(b.text.length), sg=new Uint8Array(b.text.length);
+  (b.hl||[]).forEach(([s,e])=>hl.fill(1,s,e)); (b.sug||[]).forEach(([s,e])=>sg.fill(1,s,e));
+  paras.push({el:p,text:b.text,initial:hl.slice(),cues:b.cues||null}); bits.push(hl); sugBits.push(sg); pick.push(new Uint8Array(b.text.length));
+});
+
+/* ---------- 撤销 / 重做 ---------- */
+const undoStack=[], redoStack=[];
+function snap(){return bits.map(a=>Array.from(a).join(""));}
+function restore(s){s.forEach((str,i)=>{for(let k=0;k<str.length;k++)bits[i][k]=str.charCodeAt(k)-48;});}
+function commit(fn){undoStack.push(snap()); if(undoStack.length>200)undoStack.shift(); redoStack.length=0; fn(); confirmed=false; render();}
+
+/* ---------- 画出来 ---------- */
+function runs(pi){const a=bits[pi],out=[];let s=-1;for(let i=0;i<=a.length;i++){if(a[i]&&s<0)s=i;if(!a[i]&&s>=0){out.push([s,i]);s=-1;}}return out;}
+function render(skipSave){
+  let no=0;
+  paras.forEach((p,pi)=>{
+    const t=p.text,a=bits[pi],g=sugBits[pi],pk=pick[pi]; p.el.textContent="";
+    const kindAt=i=>(a[i]?"m":(g[i]?"g":"n"))+(pk[i]?"p":"");
+    let i=0;
+    while(i<t.length){
+      const kind=kindAt(i); let j=i+1;
+      while(j<t.length && kindAt(j)===kind) j++;
+      const seg=t.slice(i,j);
+      if(kind==="n") p.el.append(seg);
+      else{
+        const e=document.createElement(kind[0]==="m"?"mark":"span");
+        const cls=[]; if(kind[0]==="g")cls.push("ghost"); if(kind[1]==="p")cls.push("pick"); if(cls.length)e.className=cls.join(" ");
+        if(kind[0]==="m" && !(i>0 && a[i-1])){no++; e.dataset.no="B"+no;}
+        e.textContent=seg; p.el.append(e);
+      }
+      i=j;
+    }
+  });
+  document.getElementById("n").textContent=no;
+  document.getElementById("undo").disabled=!undoStack.length;
+  document.getElementById("redo").disabled=!redoStack.length;
+  if(!skipSave) save();
+}
+function result(){
+  const list=[];let no=0;
+  paras.forEach((p,pi)=>runs(pi).forEach(([s,e])=>{no++;
+    let ai=false; for(let k=s;k<e;k++) if(sugBits[pi][k]){ai=true;break;}
+    let t0=null,t1=null;
+    if(p.cues){const c0=p.cues.find(c=>s<c[1])||p.cues[0], c1=[...p.cues].reverse().find(c=>e>c[0])||p.cues[p.cues.length-1]; t0=c0[2]; t1=c1[3];}
+    list.push({no:"B"+no, text:p.text.slice(s,e).trim(), startTime:t0, endTime:t1, paragraph:pi+1, start:s, end:e, wholeParagraph:p.text.slice(0,s).trim()===""&&p.text.slice(e).trim()==="", fromAI:ai});
+  }));
+  return list;
+}
+function fmt(t){if(t==null)return "";t=Math.floor(t);return String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0");}
+function resultText(){const r=result(); return "标黄结果（共 "+r.length+" 处）：\n"+r.map(x=>x.no+(x.startTime!=null?"（"+fmt(x.startTime)+"–"+fmt(x.endTime)+"）":"")+"："+x.text).join("\n");}
+
+/* ---------- 选区 → 每段的起止位置 ---------- */
+function textOffset(p,node,off){const r=document.createRange(); r.setStart(p,0); r.setEnd(node,off); return r.toString().length;}
+function selectionSpans(){
+  const sel=window.getSelection(); if(!sel||sel.rangeCount===0||sel.isCollapsed) return [];
+  const r=sel.getRangeAt(0), out=[];
+  paras.forEach((p,pi)=>{
+    if(!r.intersectsNode(p.el)) return;
+    const s=p.el.contains(r.startContainer)||p.el===r.startContainer ? textOffset(p.el,r.startContainer,r.startOffset) : 0;
+    const e=p.el.contains(r.endContainer)||p.el===r.endContainer ? textOffset(p.el,r.endContainer,r.endOffset) : p.text.length;
+    if(e>s) out.push([pi,Math.max(0,s),Math.min(p.text.length,e)]);
+  });
+  return out;
+}
+function pickSpans(){const out=[];pick.forEach((a,pi)=>{let s=-1;for(let i=0;i<=a.length;i++){if(a[i]&&s<0)s=i;if(!a[i]&&s>=0){out.push([pi,s,i]);s=-1;}}});return out;}
+function hasPicks(){return pick.some(a=>a.some(x=>x));}
+function clearPicks(){pick.forEach(a=>a.fill(0));}
+function targets(){return pickSpans().concat(selectionSpans());}
+function apply(spans,val){ if(!spans.length) return false; clearPicks(); commit(()=>spans.forEach(([pi,s,e])=>bits[pi].fill(val,s,e))); window.getSelection().removeAllRanges(); return true; }
+
+/* ---------- 荧光笔 / 橡皮擦模式 ---------- */
+let mode=null; const penBtn=document.getElementById("pen"), eraBtn=document.getElementById("eraser");
+function setMode(m){mode=m; penBtn.setAttribute("aria-pressed",m==="pen"); eraBtn.setAttribute("aria-pressed",m==="eraser"); docEl.classList.toggle("pen",m==="pen"); docEl.classList.toggle("eraser",m==="eraser"); hideMini();}
+function onTool(val,m){ return e=>{ const sp=targets(); if(sp.length){apply(sp,val); setMode(null);} else setMode(mode===m?null:m); }; }
+[penBtn,eraBtn,document.getElementById("miniMark"),document.getElementById("miniClear")].forEach(b=>b.addEventListener("mousedown",e=>e.preventDefault()));
+penBtn.addEventListener("click",onTool(1,"pen"));
+eraBtn.addEventListener("click",onTool(0,"eraser"));
+
+/* ---------- 选中文字时的小浮窗（像 Word 的迷你工具栏） ---------- */
+const mini=document.getElementById("mini");
+function hideMini(){mini.style.display="none";}
+function afterSelect(ev){
+  const multi=ev&&(ev.ctrlKey||ev.metaKey);
+  const sp=selectionSpans();
+  if(!sp.length){ if(!multi && hasPicks()){clearPicks(); render(true);} hideMini(); return; }
+  if(mode){apply(sp,mode==="pen"?1:0); hideMini(); return;}
+  if(multi){
+    sp.forEach(([pi,s,e])=>pick[pi].fill(1,s,e));
+    const rect0=window.getSelection().getRangeAt(0).getBoundingClientRect();
+    window.getSelection().removeAllRanges(); render(true);
+    setStatus("已跳着选了 "+pickSpans().length+" 处。继续按住 Ctrl/⌘ 选，选完点「突出显示」一次标黄。");
+    showMiniAt(rect0); return;
+  }
+  if(hasPicks()){clearPicks(); render(true);}
+  showMiniAt(window.getSelection().getRangeAt(0).getBoundingClientRect());
+}
+function showMiniAt(rect){
+  mini.style.display="flex";
+  mini.style.left=Math.max(8,Math.min(window.scrollX+rect.left,window.scrollX+document.documentElement.clientWidth-200))+"px";
+  mini.style.top=(window.scrollY+rect.top-46)+"px";
+}
+docEl.addEventListener("mouseup",e=>setTimeout(()=>afterSelect(e),0));
+docEl.addEventListener("touchend",e=>setTimeout(()=>afterSelect(e),300));
+document.addEventListener("selectionchange",()=>{if(window.getSelection().isCollapsed && !hasPicks())hideMini();});
+document.getElementById("miniMark").addEventListener("click",()=>{apply(targets(),1);hideMini();});
+document.getElementById("miniClear").addEventListener("click",()=>{apply(targets(),0);hideMini();});
+
+/* ---------- 其他按钮和快捷键 ---------- */
+function undo(){if(!undoStack.length)return; redoStack.push(snap()); restore(undoStack.pop()); confirmed=false; render();}
+function redo(){if(!redoStack.length)return; undoStack.push(snap()); restore(redoStack.pop()); confirmed=false; render();}
+document.getElementById("undo").addEventListener("click",undo);
+document.getElementById("redo").addEventListener("click",redo);
+document.getElementById("clear").addEventListener("click",()=>{commit(()=>bits.forEach(a=>a.fill(0))); setStatus("已清空所有标黄。点「撤销」可以找回来。");});
+document.getElementById("reset").addEventListener("click",()=>commit(()=>paras.forEach((p,i)=>bits[i].set(p.initial))));
+document.addEventListener("keydown",e=>{
+  const mod=e.ctrlKey||e.metaKey, k=e.key.toLowerCase();
+  if(mod&&k==="z"&&!e.shiftKey){e.preventDefault();undo();}
+  else if(mod&&(k==="y"||(k==="z"&&e.shiftKey))){e.preventDefault();redo();}
+  else if(e.key==="Escape"){setMode(null);hideMini(); if(hasPicks()){clearPicks();render(true);}}
+});
+document.getElementById("copy").addEventListener("click",async()=>{
+  try{await navigator.clipboard.writeText(resultText()); setStatus("已复制。回到对话里粘贴给 AI 就行。");}
+  catch(e){setStatus("复制没成功。可以直接回对话里说「标好了」。");}
+});
+let confirmed=false;
+document.getElementById("ok").addEventListener("click",()=>{confirmed=true; save(true);});
+
+/* ---------- 保存：本地小助手 > Claude 页面存储 > 复制粘贴 ---------- */
+const statusEl=document.getElementById("status");
+function setStatus(t,done){statusEl.textContent=t;statusEl.classList.toggle("done",!!done);}
+let backend=null, db=null, busy=false, again=false;
+function payload(){return {title:DOC.title, ranges:paras.map((p,i)=>runs(i)), result:result(), count:result().length, confirmed, updatedAt:new Date().toISOString()};}
+async function save(){
+  if(!backend) return;
+  if(backend==="copy"){setStatus(confirmed?"这个页面没法直接把结果交给 AI：请点「复制结果」，粘贴到对话里。":"标完点「确认标黄」。（确认后需要点「复制结果」粘贴给 AI）",confirmed);return;}
+  if(busy){again=true;return;} busy=true; setStatus("保存中…");
+  try{
+    const data=payload();
+    if(backend==="local"){const r=await fetch("api/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}); if(!r.ok) throw new Error("本地小助手没响应");}
+    else await db.doc("transcript/current").set(data);
+    setStatus(confirmed?"已确认，共 "+data.count+" 处。回到对话里说「标好了」，AI 会直接读取。":"已自动保存。标完点「确认标黄」。",confirmed);
+  }catch(e){setStatus("保存没成功（"+(e&&e.message||"未知原因")+"）。可以点「复制结果」粘贴给 AI。");}
+  busy=false; if(again){again=false; save();}
+}
+function loadRanges(rs){ if(!rs||rs.length!==paras.length) return; rs.forEach((list,i)=>{bits[i].fill(0); list.forEach(([s,e])=>bits[i].fill(1,s,e));}); }
+render();
+(async()=>{
+  try{
+    if(location.protocol.startsWith("http")){
+      const r=await fetch("api/state",{cache:"no-store"});
+      if(r.ok && (r.headers.get("content-type")||"").includes("json")){backend="local"; const d=await r.json(); if(d&&d.title===DOC.title){loadRanges(d.ranges); confirmed=!!d.confirmed;}}
+    }
+  }catch(e){}
+  if(!backend && window.claude && typeof window.claude.use==="function"){
+    try{
+      db=await Promise.race([window.claude.use("db"), new Promise(r=>setTimeout(()=>r(null),10000))]);
+      if(db){backend="db"; const s=await db.doc("transcript/current").get(); const d=s&&(typeof s.data==="function"?s.data():s); if(d&&d.title===DOC.title){loadRanges(d.ranges); confirmed=!!d.confirmed;}}
+    }catch(e){db=null;}
+  }
+  if(!backend) backend="copy";
+  render();
+})();
+</script>
+</body>
+</html>
