@@ -8,7 +8,7 @@
 你只管把剪映导出的字幕和视频丢进一个文件夹，剩下的审稿、挑风格、画画面、对齐语速、出片，AI 带着你点几下就做完。</p>
 
 <p>
-<img alt="版本" src="https://img.shields.io/badge/version-1.1.1-blue?style=flat-square">
+<img alt="版本" src="https://img.shields.io/badge/version-1.1.2-blue?style=flat-square">
 <img alt="Claude" src="https://img.shields.io/badge/Claude-桌面%20%7C%20网页%20%7C%20Code-D97757?style=flat-square">
 <img alt="Codex" src="https://img.shields.io/badge/Codex-命令行%20%7C%20桌面-000000?style=flat-square">
 <img alt="License" src="https://img.shields.io/github/license/kkkariel888/ariel-broll-video?style=flat-square">
