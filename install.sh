@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 一键准备 ariel-skills 需要的一切（macOS / Linux）。给 AI 助手跑的，也可以自己跑。
+# 一键准备 ariel-broll-video 需要的一切（macOS / Linux）。给 AI 助手跑的，也可以自己跑。
 # 用法：bash install.sh            # 全装
 #       bash install.sh --check    # 只检查，不装
 # 做的事：
@@ -9,8 +9,8 @@
 #      本机有 Codex 就：添加插件市场 + 安装
 #   4. 最后打印一张清单：哪些好了、哪些还要用户点一下
 set -u
-REPO="kkkariel888/ariel-skills"
-MARKET="ariel-skills"
+REPO="kkkariel888/ariel-broll-video"
+MARKET="ariel-broll-video"
 PLUGIN="broll-video-maker"
 CHECK_ONLY=0; [ "${1:-}" = "--check" ] && CHECK_ONLY=1
 
