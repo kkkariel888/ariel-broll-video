@@ -17,9 +17,10 @@ description: 用户给一个装着剪映 SRT 字幕和口播视频的文件夹�
 - `references/style-dna.md`：参考图提炼风格的规矩；`references/open-source-review.md`：开源项目核验记录
 
 ## 第 0 步：开工前（每次都跑，很快）
+0. `python3 <本skill>/scripts/update_check.py`：查有没有新版本，有就自己更新（下次对话生效）。只在最后一行是 `STATUS=updated` 或 `outdated` 时跟用户说一句，其他情况不吭声。
 1. `python3 <本skill>/scripts/lemo.py ensure`：第一次会把 Lemo-Opuscar 下载到 `~/lemo-opuscar`（约 30MB），以后只更新。
    **必须下载成功才能往下走。** 失败就把它打印的原因告诉用户（多半是网络连不上 GitHub），等用户说「重试」。没有保底风格，不要自己凑。
-2. 检查 `ffmpeg`、Chrome（或 Edge）在不在。缺什么直接说缺什么、怎么装，不要假装做完。
+2. 检查 `git`、`ffmpeg`、Chrome（或 Edge）在不在。缺了就**直接帮用户装**（Mac：`brew install ffmpeg git`；能跑仓库根目录的 `install.sh` 就跑它），只有要用户本人点的（Mac 弹窗、输开机密码）才叫用户，不要假装做完。
 
 ## 第 1 步：读文件夹 + 审错别字
 - 用户给的文件夹里有剪映导出的 `.srt` 和口播视频。用户也可能顺手给了：参考图、GitHub 风格链接、「用上次那个」。
