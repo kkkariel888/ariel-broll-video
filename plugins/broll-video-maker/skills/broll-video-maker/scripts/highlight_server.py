@@ -14,8 +14,10 @@
   4. 你每改一下都自动保存；点「确认标黄」后，在项目文件夹里写出：
        标黄结果.json      —— AI 读这个继续干活
        标黄逐字稿.docx    —— 带黄色高亮的 Word 版，你可以直接用 Word 打开
+  5. 确认后页面接着让你选风格（文字多/动画多 → 样图 → 就这个/换一个/用上次那个），
+     读 Agent 写的 风格排名.json，自己调 render.py 出样图，选好写出 风格选择.json
 """
-import argparse, json, os, re, socket, sys, zipfile, threading
+import argparse, json, os, re, socket, sys, time, urllib.parse, zipfile, threading
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
@@ -181,6 +183,198 @@ def free_port(want):
     raise SystemExit("找不到空闲端口")
 
 
+
+# ---------------- 选风格（标黄确认后，页面上点一下就行） ----------------
+class StyleFlow:
+    """读 Agent 写好的 风格排名.json，用这期真句子出样图；处理「就这个 / 换一个 / 用上次那个」。"""
+    def __init__(self, out_dir):
+        self.dir = out_dir
+        self.rank_path = os.path.join(out_dir, "风格排名.json")
+        self.choice_path = os.path.join(out_dir, "风格选择.json")
+        self.result_path = os.path.join(out_dir, "标黄结果.json")
+        self.img_dir = os.path.join(out_dir, "风格样图")
+        self.lock = threading.Lock()
+        self.st = {"phase": "mode", "mode": None, "cards": [], "shown": [], "msg": "", "chosen": None, "last": None}
+        if os.path.exists(self.choice_path):
+            try:
+                c = json.load(open(self.choice_path, encoding="utf-8"))
+                if c.get("confirmed"):
+                    self.st.update(phase="done", mode=c.get("mode"), chosen=c)
+            except Exception:
+                pass
+
+    def _tools(self):
+        import importlib
+        sys.path.insert(0, HERE)
+        return importlib.import_module("render"), importlib.import_module("styles_tool")
+
+    def _ranking(self):
+        if not os.path.exists(self.rank_path):
+            return None
+        d = json.load(open(self.rank_path, encoding="utf-8"))
+        return d
+
+    def _highlights(self):
+        try:
+            return json.load(open(self.result_path, encoding="utf-8")).get("result", [])
+        except Exception:
+            return []
+
+    def _pick_sentence(self, style, rk):
+        if rk.get("sample") and rk["sample"].get("text"):
+            return rk["sample"]
+        hs = self._highlights()
+        if not hs:
+            return {"no": "", "text": style.get("sample_text", ""), "time": "", "dur": 3}
+        def good(h):
+            t = h.get("text", ""); n = len(t); sc = 0
+            if style.get("layout") == "numbers": sc += 50 * bool(re.search(r"\d", t))
+            if style.get("layout") == "tool": sc += 30 * bool(re.search(r"[A-Za-z]", t))
+            if style.get("layout") == "principle": sc += 20 * bool(re.search(r"[，,；;]|就是|所以|然后", t))
+            sc += 20 - abs(n - 18)
+            return sc
+        h = max(hs, key=good)
+        st, en = h.get("startTime"), h.get("endTime")
+        dur = 3.0
+        if isinstance(st, (int, float)) and isinstance(en, (int, float)) and en > st:
+            dur = max(2.0, min(4.0, en - st))
+        tm = ""
+        if isinstance(st, (int, float)):
+            tm = "%02d:%02d" % (int(st) // 60, int(st) % 60)
+        return {"no": h.get("no", ""), "text": h.get("text", ""), "time": tm, "dur": dur}
+
+    def _diff(self, a, b):
+        """一句话说清 b 跟 a 哪里不同。"""
+        out = []
+        lum = lambda c: sum(int(c[i:i + 2], 16) for i in (1, 3, 5)) / 765
+        try:
+            la, lb = lum(a["palette"]["bg"]), lum(b["palette"]["bg"])
+            if abs(la - lb) > 0.3: out.append("深色底" if lb < la else "浅色底")
+        except Exception:
+            pass
+        if a.get("category") != b.get("category"): out.append("主打" + b.get("category", ""))
+        sa, sb = a.get("motion", {}).get("speed", 1), b.get("motion", {}).get("speed", 1)
+        if sb - sa > 0.15: out.append("动得更快")
+        elif sa - sb > 0.15: out.append("动得更慢更稳")
+        if a.get("layout") != b.get("layout"):
+            out.append({"principle": "用线把环节连起来", "numbers": "数字和柱子当主角", "tool": "窗口里打字演示"}.get(b.get("layout"), ""))
+        return "跟上一个比：" + "、".join(x for x in out if x) if out else "跟上一个是同一类，换了配色"
+
+    def _render_card(self, row, why):
+        R, T = self._tools()
+        sd = R.find_style(row["path"]); style = json.load(open(os.path.join(sd, "style.json"), encoding="utf-8"))
+        rk = self._ranking() or {}
+        sen = self._pick_sentence(style, rk)
+        os.makedirs(self.img_dir, exist_ok=True)
+        tmp = os.path.join(self.img_dir, "_tmp_" + style["id"])
+        label = (f'{sen["no"]} · {sen["time"]}：{sen["text"]}' if sen.get("no") else sen["text"])
+        R.render(str(sd), sen["text"], sen.get("dur", 3), rk.get("aspect", "9:16"), rk.get("size"), 30, self.st["mode"] or "anim",
+                 None, None, tmp, True, label)
+        img = f'{style["id"]}_{self.st["mode"]}.png'
+        os.replace(os.path.join(tmp, "2_最满.png"), os.path.join(self.img_dir, img))
+        import shutil; shutil.rmtree(tmp, ignore_errors=True)
+        return {"id": style["id"], "name": style["name"], "category": style.get("category", ""), "why": why, "img": "samples/" + img,
+                "path": str(sd), "score": row.get("score"), "sentence": sen, "_style": style}
+
+    def _bg(self, fn):
+        def run():
+            try:
+                fn()
+            except Exception as e:
+                with self.lock:
+                    self.st.update(phase="error", msg="样图没出来：" + str(e)[:300] + "。回到对话里跟 AI 说一声。")
+        threading.Thread(target=run, daemon=True).start()
+
+    def _first(self):
+        rk = self._ranking()
+        rows = rk.get("ranking", [])
+        if not rows:
+            with self.lock: self.st.update(phase="error", msg="没有上架的风格。")
+            return
+        r = rows[0]
+        why = r.get("why") or f'这期「{r.get("category","")}」的内容最多，{r["name"]}专门做这一类。'
+        card = self._render_card(r, why)
+        with self.lock:
+            self.st.update(phase="choose", cards=[card], shown=[r["id"]], msg="")
+
+    def _next(self):
+        rk = self._ranking(); rows = rk.get("ranking", [])
+        rest = [r for r in rows if r["id"] not in self.st["shown"]][:2]
+        if not rest:
+            with self.lock: self.st.update(phase="choose", msg="上架的风格都给你看过了。想要新的：把参考图发到对话里，AI 帮你提炼一个。")
+            return
+        prev = self.st["cards"][0]["_style"] if self.st["cards"] else {}
+        cards = []
+        for r in rest:
+            c = self._render_card(r, "")
+            c["why"] = r.get("why") or self._diff(prev, c["_style"])
+            cards.append(c)
+        with self.lock:
+            self.st.update(phase="choose", cards=cards, shown=self.st["shown"] + [r["id"] for r in rest], msg="")
+
+    def _choose(self, card):
+        R, T = self._tools()
+        choice = {"confirmed": True, "style_id": card["id"], "name": card["name"], "path": card["path"], "mode": self.st["mode"],
+                  "sample": card.get("sentence"), "image": os.path.join(self.dir, card["img"].replace("samples/", "风格样图/")),
+                  "at": time.strftime("%Y-%m-%d %H:%M:%S")}
+        tmp = self.choice_path + ".tmp"
+        json.dump(choice, open(tmp, "w", encoding="utf-8"), ensure_ascii=False, indent=2); os.replace(tmp, self.choice_path)
+        try:
+            T.last(card["path"])          # 记下「上次那个」（只在本机）
+        except SystemExit:
+            pass
+        with self.lock:
+            self.st.update(phase="done", chosen=choice, msg="")
+        print(f"[风格已选] {card['name']} → {self.choice_path}", flush=True)
+
+    def state(self):
+        with self.lock:
+            st = dict(self.st)
+        if st["phase"] == "waiting" and self._ranking():
+            with self.lock:
+                if self.st["phase"] == "waiting":
+                    self.st["phase"] = "rendering"; self._bg(self._first)
+            st = dict(self.st)
+        try:
+            R, T = self._tools()
+            lp = T.LAST
+            st["last"] = json.load(open(lp, encoding="utf-8")) if os.path.exists(lp) else None
+        except Exception:
+            st["last"] = None
+        st["cards"] = [{k: v for k, v in c.items() if k != "_style"} for c in st["cards"]]
+        return st
+
+    def act(self, d):
+        a = d.get("act")
+        with self.lock:
+            busy = self.st["phase"] == "rendering"
+        if busy:
+            return
+        if a == "mode":
+            with self.lock:
+                self.st.update(mode="text" if d.get("mode") == "text" else "anim", phase="waiting", cards=[], shown=[], msg="")
+        elif a == "ok":
+            card = next((c for c in self.st["cards"] if c["id"] == d.get("id")), None)
+            if card: self._choose(card)
+        elif a == "next":
+            with self.lock: self.st["phase"] = "rendering"
+            self._bg(self._next)
+        elif a == "last":
+            def go():
+                R, T = self._tools()
+                if not os.path.exists(T.LAST):
+                    with self.lock: self.st.update(phase="choose", msg="还没有「上次」的记录：这是第一次选。")
+                    return
+                lp = json.load(open(T.LAST, encoding="utf-8"))
+                c = self._render_card({"path": lp["path"], "id": lp["id"]}, "上次用的就是它")
+                with self.lock: self.st["cards"] = [c]
+                self._choose(c)
+            with self.lock: self.st["phase"] = "rendering"
+            self._bg(go)
+        elif a == "reopen":
+            with self.lock: self.st.update(phase="choose" if self.st["cards"] else "mode", chosen=None)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("transcript")
@@ -204,6 +398,7 @@ def main():
     with open(TEMPLATE, encoding="utf-8") as f:
         page = f.read().replace("__DATA__", json.dumps({"title": title, "blocks": blocks}, ensure_ascii=False))
     lock = threading.Lock()
+    flow = StyleFlow(out_dir)
 
     class H(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -222,6 +417,15 @@ def main():
             path = self.path.split("?")[0]
             if path in ("/", "/index.html"):
                 self.send(200, page, "text/html; charset=utf-8")
+            elif path == "/api/style":
+                self.send(200, json.dumps(flow.state(), ensure_ascii=False), "application/json; charset=utf-8")
+            elif path.startswith("/samples/"):
+                fp = os.path.join(flow.img_dir, os.path.basename(urllib.parse.unquote(path)))
+                if os.path.exists(fp):
+                    with open(fp, "rb") as f:
+                        self.send(200, f.read(), "image/png")
+                else:
+                    self.send(404, "not found", "text/plain")
             elif path == "/api/state":
                 if os.path.exists(state_path):
                     with open(state_path, encoding="utf-8") as f:
@@ -232,9 +436,16 @@ def main():
                 self.send(404, "not found", "text/plain")
 
         def do_POST(self):
-            if self.path.split("?")[0] != "/api/save":
-                return self.send(404, "not found", "text/plain")
+            path = self.path.split("?")[0]
             n = int(self.headers.get("Content-Length", "0"))
+            if path == "/api/style":
+                try:
+                    flow.act(json.loads(self.rfile.read(n).decode("utf-8")))
+                except Exception as e:
+                    return self.send(400, json.dumps({"ok": False, "err": str(e)}), "application/json")
+                return self.send(200, json.dumps(flow.state(), ensure_ascii=False), "application/json; charset=utf-8")
+            if path != "/api/save":
+                return self.send(404, "not found", "text/plain")
             try:
                 data = json.loads(self.rfile.read(n).decode("utf-8"))
             except Exception:

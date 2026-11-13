@@ -1,7 +1,7 @@
 {
   "name": "broll-video-maker",
-  "version": "1.0.2",
-  "description": "给口播视频配代码动画 B-roll：审错别字、仿 Word 标黄、逐帧审稿、对齐语速、出片。Claude 和 Codex 通用。",
+  "version": "1.1.0",
+  "description": "给口播视频配代码动画 B-roll：审错别字、仿 Word 标黄、按内容自动挑风格（点一下就选）、逐帧审稿、对齐语速、出片。Claude 和 Codex 通用。",
   "author": { "name": "kkkariel888" },
   "license": "MIT"
 }

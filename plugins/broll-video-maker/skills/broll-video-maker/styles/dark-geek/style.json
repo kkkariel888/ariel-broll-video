@@ -1,0 +1,73 @@
+{
+  "id": "dark-geek",
+  "name": "黑暗极客风",
+  "category": "演示工具",
+  "fit": "讲 AI、软件、怎么操作一个工具、敲命令",
+  "not_for": "温情、生活类话题",
+  "layout": "tool",
+  "palette": {
+    "bg": "#0A0E13",
+    "ink": "#E6EDF3",
+    "accent": "#2CE6C1",
+    "accent2": "#4DA3FF",
+    "muted": "#5B6675",
+    "panel": "#111821"
+  },
+  "background": {
+    "texture": "scanlines",
+    "texture_color": "rgba(255,255,255,.025)"
+  },
+  "layout_rules": {
+    "margin": 0.07,
+    "align": "left",
+    "whitespace": "少，窗口占满大半屏"
+  },
+  "type": {
+    "head_weight": 700,
+    "body_weight": 500,
+    "scale": 1.0,
+    "mono": "\"JetBrains Mono\",\"SF Mono\",Menlo,Consolas,\"Source Han Sans SC\",\"Noto Sans CJK SC\",monospace"
+  },
+  "line": {
+    "width": 2
+  },
+  "motion": {
+    "entrance": "type",
+    "speed": 1.2,
+    "cuts_per_5s": 3,
+    "feel": "打字机，一行行输出打勾，进度条走满"
+  },
+  "density": "mid",
+  "pace": "fast",
+  "license": "原创（作者 kkkariel888），随本仓库 MIT 发布",
+  "source": "https://github.com/kkkariel888/ariel-skills",
+  "status": "上架",
+  "sample_text": "我让 Claude 读完字幕，自动标黄，再一键出片",
+  "verified": {
+    "style": "dark-geek",
+    "text": "我让 Claude 读完字幕，自动标黄，再一键出片",
+    "checked_at": "2026-11-13",
+    "results": {
+      "9:16": {
+        "ok": true,
+        "video": "samples/sample_9x16.mp4",
+        "still": "samples/sample_9x16.png",
+        "moves": true,
+        "w": 1080,
+        "h": 1920,
+        "fps": "30/1",
+        "dur": 3.0
+      },
+      "16:9": {
+        "ok": true,
+        "video": "samples/sample_16x9.mp4",
+        "still": "samples/sample_16x9.png",
+        "moves": true,
+        "w": 1920,
+        "h": 1080,
+        "fps": "30/1",
+        "dur": 3.0
+      }
+    }
+  }
+}

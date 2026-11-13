@@ -77,6 +77,28 @@ h2{font-size:14px;color:var(--muted);font-weight:700;margin:26px 0 6px}
 .mini button{font:inherit;font-size:13px;border:none;background:transparent;color:var(--ink);padding:5px 9px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:5px}
 .mini button:hover{background:var(--ribbon)}
 .mini i{display:inline-block;width:14px;height:14px;background:var(--hl);border:1px solid var(--rule)}
+
+/* ---- 第二步：选风格 ---- */
+.sp{max-width:794px;margin:0 auto 18px;background:var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.18);padding:22px clamp(16px,5vw,40px) 26px;display:none}
+.sp.on{display:block}
+.sp h2{margin:0 0 4px;font-size:17px;color:var(--ink)}
+.sp .hint{font-size:13px;color:var(--muted);margin:0 0 14px;line-height:1.7}
+.sp .row2{display:flex;gap:10px;flex-wrap:wrap}
+.big{font:inherit;font-size:15px;font-weight:500;padding:12px 18px;border-radius:6px;border:1px solid var(--rule);background:var(--ribbon);color:var(--ink);cursor:pointer;min-width:150px}
+.big:hover{border-color:var(--accent)}
+.big.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.big:disabled{opacity:.45;cursor:default}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:6px 0 14px}
+.card{border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--ribbon);display:flex;flex-direction:column}
+.card img{width:100%;display:block;background:#000;max-height:520px;object-fit:contain}
+.card .meta{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px}
+.card b{font-size:15px}
+.card .why{font-size:12.5px;color:var(--muted);line-height:1.6}
+.card .tag{font-size:11px;color:var(--accent);font-weight:700}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:r 0.8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes r{to{transform:rotate(360deg)}}
+.done-box{font-size:15px;line-height:1.8}
+.done-box b{color:var(--accent)}
 @media (max-width:520px){.grp{padding:0 4px}.tb{min-width:38px}.tb small{font-size:10.5px}}
 </style>
 </head>
@@ -103,7 +125,13 @@ h2{font-size:14px;color:var(--muted);font-weight:700;margin:26px 0 6px}
   <div class="status" id="status">正在连接…</div>
 </header>
 
-<main class="page"><article class="sheet">
+<main class="page">
+<section class="sp" id="sp">
+  <h2 id="spTitle">第二步：选风格</h2>
+  <p class="hint" id="spHint"></p>
+  <div id="spBody"></div>
+</section>
+<article class="sheet">
   <h1 id="ttl"></h1>
   <p class="tip">每段上方的小字是它在视频里的时间。和 Word 一样：<b>先选中文字，再点「突出显示」</b>就标黄；选中后点「无颜色」就去掉。不选文字直接点「突出显示」，鼠标会变成荧光笔，直接划过文字就标黄，按 <kbd>Esc</kbd> 退出。<b>跳着选好几处</b>：按住 <kbd>Ctrl</kbd>（Mac 按 <kbd>⌘</kbd>）再一处一处划选，选好后点一次「突出显示」全部标黄。<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> 撤销。AI 建议过、被你去掉的地方会留一条虚线。</p>
   <div class="doc" id="doc"></div>
@@ -264,10 +292,61 @@ async function save(){
     const data=payload();
     if(backend==="local"){const r=await fetch("api/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}); if(!r.ok) throw new Error("本地小助手没响应");}
     else await db.doc("transcript/current").set(data);
-    setStatus(confirmed?"已确认，共 "+data.count+" 处。回到对话里说「标好了」，AI 会直接读取。":"已自动保存。标完点「确认标黄」。",confirmed);
+    setStatus(confirmed?(backend==="local"?"已确认，共 "+data.count+" 处。往下一步：选风格。":"已确认，共 "+data.count+" 处。回到对话里说「标好了」，AI 会直接读取。"):"已自动保存。标完点「确认标黄」。",confirmed);
+    if(confirmed) spStart();
   }catch(e){setStatus("保存没成功（"+(e&&e.message||"未知原因")+"）。可以点「复制结果」粘贴给 AI。");}
   busy=false; if(again){again=false; save();}
 }
+
+// ---------------- 第二步：选风格（只在本机小助手模式下出现） ----------------
+const sp=document.getElementById("sp"), spBody=document.getElementById("spBody"), spHint=document.getElementById("spHint");
+let spTimer=null, spLast="";
+async function spCall(body){
+  const r = body ? await fetch("api/style",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}) : await fetch("api/style",{cache:"no-store"});
+  if(!r.ok) throw new Error("小助手没响应"); return r.json();
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function spDraw(st){
+  const key=JSON.stringify([st.phase,st.mode,st.msg,(st.cards||[]).map(c=>c.id+c.img),st.chosen&&st.chosen.style_id,st.last&&st.last.id]);
+  if(key===spLast) return; spLast=key;
+  sp.classList.add("on");
+  const lastBtn = st.last ? `<button class="big" data-a="last">用上次那个（${esc(st.last.name)}）</button>` : "";
+  if(st.phase==="mode"){
+    spHint.textContent="点一下就行，不用打字。";
+    spBody.innerHTML=`<p class="hint" style="margin-top:0">这期 B-roll 想要：</p><div class="row2">
+      <button class="big pri" data-m="text">文字讲解多一点</button><button class="big pri" data-m="anim">纯动画多一点</button></div>`;
+  }else if(st.phase==="waiting"){
+    spHint.innerHTML=`<span class="spin"></span>AI 正在读内容、给风格打分…`; spBody.innerHTML="";
+  }else if(st.phase==="rendering"){
+    spHint.innerHTML=`<span class="spin"></span>正在用你这期的原话出样图，几秒钟…`; spBody.innerHTML="";
+  }else if(st.phase==="choose"){
+    spHint.textContent = st.msg || (st.cards.length>1 ? "换了 2 个最接近的，看哪个顺眼：" : "按这期内容挑的第 1 名，样图用的是你的原话：");
+    spBody.innerHTML = `<div class="cards">${(st.cards||[]).map(c=>`<div class="card"><img src="${esc(c.img)}?v=${Date.now()}" alt="${esc(c.name)} 样图">
+      <div class="meta"><span class="tag">${esc(c.category)}</span><b>${esc(c.name)}</b><span class="why">${esc(c.why)}</span>
+      <button class="big pri" data-a="ok" data-id="${esc(c.id)}">就这个</button></div></div>`).join("")}</div>
+      <div class="row2"><button class="big" data-a="next">换一个</button>${lastBtn}</div>`;
+  }else if(st.phase==="done"){
+    const c=st.chosen||{};
+    spHint.textContent="";
+    spBody.innerHTML=`<div class="done-box">已选 <b>${esc(c.name)}</b>（${c.mode==="text"?"文字讲解多一点":"纯动画多一点"}）。回到对话里说「选好了」，AI 就开始出逐帧图。</div>
+      <div class="row2" style="margin-top:10px"><button class="big" data-a="reopen">重新选</button></div>`;
+  }else if(st.phase==="error"){
+    spHint.textContent=st.msg||"出错了"; spBody.innerHTML=`<div class="row2"><button class="big" data-a="next">再试一次</button></div>`;
+  }
+}
+async function spPoll(){
+  try{ const st=await spCall(); spDraw(st); clearTimeout(spTimer);
+    if(["waiting","rendering"].includes(st.phase)) spTimer=setTimeout(spPoll,1200); }
+  catch(e){ spHint.textContent="选风格的小助手连不上："+e.message; }
+}
+spBody.addEventListener("click",async e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  spBody.querySelectorAll("button").forEach(x=>x.disabled=true);
+  const body = b.dataset.m ? {act:"mode",mode:b.dataset.m} : {act:b.dataset.a,id:b.dataset.id};
+  try{ spDraw(await spCall(body)); }catch(err){ spHint.textContent="没点成功："+err.message; }
+  setTimeout(spPoll,300);
+});
+function spStart(){ if(backend!=="local"||!confirmed) return; sp.classList.add("on"); spPoll(); sp.scrollIntoView({behavior:"smooth",block:"start"}); }
 function loadRanges(rs){ if(!rs||rs.length!==paras.length) return; rs.forEach((list,i)=>{bits[i].fill(0); list.forEach(([s,e])=>bits[i].fill(1,s,e));}); }
 render();
 (async()=>{
@@ -285,6 +364,7 @@ render();
   }
   if(!backend) backend="copy";
   render();
+  if(backend==="local"&&confirmed) spStart();
 })();
 </script>
 </body>

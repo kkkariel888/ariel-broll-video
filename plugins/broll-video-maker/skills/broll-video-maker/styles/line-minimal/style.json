@@ -1,0 +1,73 @@
+{
+  "id": "line-minimal",
+  "name": "单线条风",
+  "category": "讲原理",
+  "fit": "讲道理、讲方法、讲一件事是怎么一步步运作的",
+  "not_for": "密集数字对比、软件操作演示",
+  "layout": "principle",
+  "palette": {
+    "bg": "#F6F4EF",
+    "ink": "#1F1F1F",
+    "accent": "#FF5A36",
+    "accent2": "#FF5A36",
+    "muted": "#8E8A82",
+    "panel": "#FFFFFF"
+  },
+  "background": {
+    "texture": "paper",
+    "texture_color": "rgba(0,0,0,.06)"
+  },
+  "layout_rules": {
+    "margin": 0.09,
+    "align": "center",
+    "whitespace": "多，一屏最多 4 个环节"
+  },
+  "type": {
+    "head_weight": 700,
+    "body_weight": 500,
+    "scale": 1.0,
+    "family": "\"Source Han Sans SC\",\"Noto Sans CJK SC\",\"思源黑体\",\"PingFang SC\",sans-serif"
+  },
+  "line": {
+    "width": 3
+  },
+  "motion": {
+    "entrance": "draw",
+    "speed": 1.0,
+    "cuts_per_5s": 2,
+    "feel": "线先画出来，字再浮上来，节奏平稳"
+  },
+  "density": "low",
+  "pace": "mid",
+  "license": "原创（作者 kkkariel888），随本仓库 MIT 发布",
+  "source": "https://github.com/kkkariel888/ariel-skills",
+  "status": "上架",
+  "sample_text": "复利就是利滚利，本金生利息，利息再生利息",
+  "verified": {
+    "style": "line-minimal",
+    "text": "复利就是利滚利，本金生利息，利息再生利息",
+    "checked_at": "2026-11-13",
+    "results": {
+      "9:16": {
+        "ok": true,
+        "video": "samples/sample_9x16.mp4",
+        "still": "samples/sample_9x16.png",
+        "moves": true,
+        "w": 1080,
+        "h": 1920,
+        "fps": "30/1",
+        "dur": 3.0
+      },
+      "16:9": {
+        "ok": true,
+        "video": "samples/sample_16x9.mp4",
+        "still": "samples/sample_16x9.png",
+        "moves": true,
+        "w": 1920,
+        "h": 1080,
+        "fps": "30/1",
+        "dur": 3.0
+      }
+    }
+  }
+}
