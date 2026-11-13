@@ -133,6 +133,8 @@ git clone --depth 1 https://github.com/kkkariel888/ariel-broll-video.git /tmp/ar
 /plugin install broll-video-maker --marketplace kkkariel888/ariel-broll-video
 ```
 
+装完打开自动更新：`/plugin` → Marketplaces → 选 ariel-broll-video → Enable auto-update（第三方插件市场默认是关的；用上面「一条命令装齐」的方式装会自动帮你打开）
+
 **Codex 桌面 app**：Plugins → Add marketplace → 填 `kkkariel888/ariel-broll-video` → 装 broll-video-maker
 
 **Codex 命令行**：
@@ -141,6 +143,8 @@ git clone --depth 1 https://github.com/kkkariel888/ariel-broll-video.git /tmp/ar
 codex plugin marketplace add kkkariel888/ariel-broll-video
 codex plugin add broll-video-maker@ariel-broll-video
 ```
+
+装完不用另外打开自动更新：skill 每次开工会自己检查新版本并自动更新。
 
 </details>
 
