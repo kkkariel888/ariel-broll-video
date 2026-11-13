@@ -24,7 +24,7 @@ codex plugin add broll-video-maker@ariel-skills
 ## 插件列表
 | 插件 | 做什么 |
 |---|---|
-| broll-video-maker | 给口播视频配代码动画 B-roll：审错别字、仿 Word 标黄、逐帧审稿、对齐语速、出片 |
+| broll-video-maker | 给口播视频配代码动画 B-roll：审错别字、仿 Word 标黄、从 Lemo 风格库 / 参考图 / GitHub 链接挑风格、每个画面按风格现画、逐帧审稿、对齐语速、出片（风格库首次使用时自动下载：Lemo-Opuscar by Lemomo） |
 
 ## 许可证
 MIT。部分风格改编自开源项目，见各插件内的致谢。
