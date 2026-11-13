@@ -1,0 +1,134 @@
+{
+  "id": "swiss-data",
+  "name": "克制数据",
+  "vibe": "财经数据：浅灰白、网格、一个信号红，精确",
+  "inspired_by": [
+    "Polymatter 的数据讲解",
+    "瑞士国际主义排版"
+  ],
+  "fit": "比数字、讲收益、讲价格、讲涨跌",
+  "tags": [
+    "light",
+    "data",
+    "precise"
+  ],
+  "palette": {
+    "bg": "#F3F3F0",
+    "ink": "#111111",
+    "accent": "#E5402B",
+    "accent2": "#111111",
+    "muted": "#B7B7B0",
+    "line": "#111111",
+    "panel": "#FFFFFF"
+  },
+  "background": {
+    "texture": "grid",
+    "texture_color": "rgba(17,17,17,.045)"
+  },
+  "surface": {
+    "kind": "flat",
+    "fill": "#FFFFFF",
+    "border": "rgba(17,17,17,.10)",
+    "radius": 6,
+    "shadow": 0
+  },
+  "type": {
+    "head": "sans",
+    "body": "sans",
+    "head_weight": 800,
+    "body_weight": 500,
+    "head_tracking": -0.035,
+    "tracking": 0.01,
+    "scale": 1.0
+  },
+  "line": {
+    "width": 2
+  },
+  "accent_style": "underline",
+  "motion": {
+    "entrance": "rise",
+    "speed": 1.05,
+    "cuts_per_5s": 2,
+    "feel": "干净利落，数字精确地滚到位"
+  },
+  "layout_rules": {
+    "margin": 0.1,
+    "align": "left",
+    "whitespace": "中，严格对齐"
+  },
+  "pace": "mid",
+  "density": "high",
+  "sample_text": "存银行年化 2%，买指数基金长期大约 8%，差了 4 倍",
+  "license": "原创（作者 kkkariel888），随本仓库 MIT 发布。只学参考频道的感觉，不含任何原图、logo、角色或品牌元素",
+  "source": "https://github.com/kkkariel888/ariel-skills",
+  "status": "上架",
+  "suits": {
+    "讲原理": 0.6,
+    "比数字": 1.0,
+    "讲新闻": 0.7,
+    "演示工具": 0.5,
+    "讲结论": 0.6
+  },
+  "verified": {
+    "style": "swiss-data",
+    "checked_at": "2026-11-13",
+    "results": {
+      "9:16 principle": {
+        "ok": true,
+        "still": "samples/principle_9x16.png"
+      },
+      "9:16 numbers": {
+        "ok": true,
+        "still": "samples/numbers_9x16.png"
+      },
+      "9:16 tool": {
+        "ok": true,
+        "still": "samples/tool_9x16.png"
+      },
+      "9:16 news": {
+        "ok": true,
+        "still": "samples/news_9x16.png"
+      },
+      "9:16 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_9x16.png"
+      },
+      "9:16 视频": {
+        "ok": true,
+        "video": "samples/sample_9x16.mp4",
+        "w": 1080,
+        "h": 1920,
+        "fps": "30/1",
+        "dur": 3.0
+      },
+      "16:9 principle": {
+        "ok": true,
+        "still": "samples/principle_16x9.png"
+      },
+      "16:9 numbers": {
+        "ok": true,
+        "still": "samples/numbers_16x9.png"
+      },
+      "16:9 tool": {
+        "ok": true,
+        "still": "samples/tool_16x9.png"
+      },
+      "16:9 news": {
+        "ok": true,
+        "still": "samples/news_16x9.png"
+      },
+      "16:9 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_16x9.png"
+      },
+      "16:9 视频": {
+        "ok": true,
+        "video": "samples/sample_16x9.mp4",
+        "w": 1920,
+        "h": 1080,
+        "fps": "30/1",
+        "dur": 3.0
+      }
+    }
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "id": "noir-minimal",
+  "name": "极简黑白",
+  "vibe": "电影感：纯黑、宋体、大留白，慢",
+  "inspired_by": [
+    "LEMMiNO 的纪录片画面"
+  ],
+  "fit": "讲结论、讲观点、讲道理、有分量的金句",
+  "tags": [
+    "dark",
+    "cinematic",
+    "slow"
+  ],
+  "palette": {
+    "bg": "#000000",
+    "ink": "#ECECEC",
+    "accent": "#C9A86A",
+    "accent2": "#C9A86A",
+    "muted": "#6E6E6E",
+    "line": "#3A3A3A"
+  },
+  "background": {
+    "base": "#000000",
+    "grain": 0.09,
+    "grain_blend": "screen",
+    "vignette": 0.65
+  },
+  "surface": {
+    "kind": "outline",
+    "border": "rgba(255,255,255,.14)",
+    "radius": 2,
+    "shadow": 0
+  },
+  "type": {
+    "head": "serif",
+    "body": "sans",
+    "head_weight": 600,
+    "body_weight": 300,
+    "head_tracking": 0.04,
+    "tracking": 0.08,
+    "scale": 0.92
+  },
+  "line": {
+    "width": 1.5
+  },
+  "accent_style": "underline",
+  "motion": {
+    "entrance": "blur",
+    "speed": 0.72,
+    "cuts_per_5s": 1,
+    "feel": "很慢的淡入，字一行行浮出来，像片尾字幕"
+  },
+  "layout_rules": {
+    "margin": 0.12,
+    "align": "center",
+    "whitespace": "极多，一屏只说一件事"
+  },
+  "pace": "slow",
+  "density": "low",
+  "sample_text": "所以说到底，年轻人最该投资的是自己",
+  "license": "原创（作者 kkkariel888），随本仓库 MIT 发布。只学参考频道的感觉，不含任何原图、logo、角色或品牌元素",
+  "source": "https://github.com/kkkariel888/ariel-skills",
+  "status": "上架",
+  "suits": {
+    "讲原理": 0.5,
+    "比数字": 0.4,
+    "讲新闻": 0.5,
+    "演示工具": 0.3,
+    "讲结论": 1.0
+  },
+  "verified": {
+    "style": "noir-minimal",
+    "checked_at": "2026-11-13",
+    "results": {
+      "9:16 principle": {
+        "ok": true,
+        "still": "samples/principle_9x16.png"
+      },
+      "9:16 numbers": {
+        "ok": true,
+        "still": "samples/numbers_9x16.png"
+      },
+      "9:16 tool": {
+        "ok": true,
+        "still": "samples/tool_9x16.png"
+      },
+      "9:16 news": {
+        "ok": true,
+        "still": "samples/news_9x16.png"
+      },
+      "9:16 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_9x16.png"
+      },
+      "9:16 视频": {
+        "ok": true,
+        "video": "samples/sample_9x16.mp4",
+        "w": 1080,
+        "h": 1920,
+        "fps": "30/1",
+        "dur": 3.0
+      },
+      "16:9 principle": {
+        "ok": true,
+        "still": "samples/principle_16x9.png"
+      },
+      "16:9 numbers": {
+        "ok": true,
+        "still": "samples/numbers_16x9.png"
+      },
+      "16:9 tool": {
+        "ok": true,
+        "still": "samples/tool_16x9.png"
+      },
+      "16:9 news": {
+        "ok": true,
+        "still": "samples/news_16x9.png"
+      },
+      "16:9 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_16x9.png"
+      },
+      "16:9 视频": {
+        "ok": true,
+        "video": "samples/sample_16x9.mp4",
+        "w": 1920,
+        "h": 1080,
+        "fps": "30/1",
+        "dur": 3.0
+      }
+    }
+  }
+}

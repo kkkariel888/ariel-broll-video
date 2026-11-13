@@ -88,9 +88,12 @@ h2{font-size:14px;color:var(--muted);font-weight:700;margin:26px 0 6px}
 .big:hover{border-color:var(--accent)}
 .big.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .big:disabled{opacity:.45;cursor:default}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:6px 0 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;margin:6px 0 14px}
 .card{border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--ribbon);display:flex;flex-direction:column}
-.card img{width:100%;display:block;background:#000;max-height:520px;object-fit:contain}
+.card .shots{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#000}
+.card figure{margin:0;position:relative}
+.card img{width:100%;display:block;background:#000;max-height:420px;object-fit:contain}
+.card figcaption{position:absolute;left:6px;top:6px;font-size:11px;background:rgba(0,0,0,.6);color:#fff;padding:1px 6px;border-radius:3px}
 .card .meta{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px}
 .card b{font-size:15px}
 .card .why{font-size:12.5px;color:var(--muted);line-height:1.6}
@@ -320,8 +323,8 @@ function spDraw(st){
   }else if(st.phase==="rendering"){
     spHint.innerHTML=`<span class="spin"></span>正在用你这期的原话出样图，几秒钟…`; spBody.innerHTML="";
   }else if(st.phase==="choose"){
-    spHint.textContent = st.msg || (st.cards.length>1 ? "换了 2 个最接近的，看哪个顺眼：" : "按这期内容挑的第 1 名，样图用的是你的原话：");
-    spBody.innerHTML = `<div class="cards">${(st.cards||[]).map(c=>`<div class="card"><img src="${esc(c.img)}?v=${Date.now()}" alt="${esc(c.name)} 样图">
+    spHint.textContent = st.msg || (st.cards.length>1 ? "换了 2 个最接近的，看哪个顺眼：" : "按这期内容挑的第 1 名。每处用什么画面结构 AI 会自动配，你只挑整体长相：");
+    spBody.innerHTML = `<div class="cards">${(st.cards||[]).map(c=>`<div class="card"><div class="shots">${(c.imgs||[{img:c.img}]).map(x=>`<figure><img src="${esc(x.img)}?v=${Date.now()}" alt="${esc(c.name)} 样图"><figcaption>${esc(x.layout||"")}</figcaption></figure>`).join("")}</div>
       <div class="meta"><span class="tag">${esc(c.category)}</span><b>${esc(c.name)}</b><span class="why">${esc(c.why)}</span>
       <button class="big pri" data-a="ok" data-id="${esc(c.id)}">就这个</button></div></div>`).join("")}</div>
       <div class="row2"><button class="big" data-a="next">换一个</button>${lastBtn}</div>`;

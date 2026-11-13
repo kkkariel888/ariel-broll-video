@@ -5,6 +5,7 @@
 用法：
   render.py --style line-minimal --text "复利就是利滚利" --dur 3 --aspect 9:16 --out B1.mp4
   render.py --style data-story --text "年化 8% 和 2%，十年差两倍" --dur 3 --aspect 16:9 --keyframes --label "B3 · 00:41：…" --out 关键帧/B3
+风格只管长相；版式（讲原理/比数字/演示工具/讲新闻/讲结论）按这句话自动配，--layout 可以手动指定。
 可选：--size 1080x1920  --fps 30  --mode text|anim  --items "一|二|三"  --emphasis "重点词"  --at 1.2（只出这一秒的一张图）
 """
 import argparse, base64, json, os, pathlib, platform, random, re, shutil, socket, struct, subprocess, sys, tempfile, time, urllib.request
@@ -23,11 +24,23 @@ def find_style(s):
     sys.exit(f'找不到风格：{s}（内置风格在 {STYLES}，我的风格在 {HOME/"my-styles"}）')
 
 def load_style(d):
-    st = json.loads((d / 'style.json').read_text(encoding='utf-8'))
-    lay = st.get('layout')
-    if not (STYLES / '_layouts' / f'{lay}.js').exists():
-        sys.exit(f'风格 {d.name} 的版式 {lay} 不存在')
-    return st
+    return json.loads((d / 'style.json').read_text(encoding='utf-8'))
+
+# ---------- 每句自动配版式 ----------
+LAYOUTS = ['principle', 'numbers', 'tool', 'news', 'conclusion']
+LAYOUT_CN = {'principle': '讲原理', 'numbers': '比数字', 'tool': '演示工具', 'news': '讲新闻', 'conclusion': '讲结论'}
+def pick_layout(text):
+    """风格只管长相，版式按这句话的内容自动配。顺序：数字 > 新闻 > 工具 > 结论 > 原理。"""
+    nums = re.findall(r'\d+(?:\.\d+)?\s*(%|％|倍|万|亿|元|块|美元|年|个月|天|小时|岁|次|人)?', text)
+    if len(nums) >= 2 or any(u for u in nums):
+        return 'numbers'
+    if re.search(r'发布|宣布|官宣|上线|刚刚|最新|消息|报道|曝光|\d{1,2}\s*月\s*\d{1,2}\s*日|今天.{0,6}(公布|推出)', text):
+        return 'news'
+    if re.search(r'Claude|GPT|ChatGPT|Codex|Cursor|AI|App|软件|工具|插件|命令|代码|点击|打开|按钮|一键|设置|[A-Za-z]{4,}', text):
+        return 'tool'
+    if re.search(r'所以|总之|结论|记住|一句话|说到底|本质上|最重要|核心是|关键是', text):
+        return 'conclusion'
+    return 'principle'
 
 # ---------- 拼页面 ----------
 BASE_CSS = '''html,body{margin:0;padding:0;background:#000;overflow:hidden}
@@ -41,7 +54,7 @@ BASE_CSS = '''html,body{margin:0;padding:0;background:#000;overflow:hidden}
 
 def build_page(st, sd, scene, label=None):
     eng = STYLES / '_engine'
-    lay = (STYLES / '_layouts' / f"{st['layout']}.js").read_text(encoding='utf-8')
+    lay = (STYLES / '_layouts' / f"{scene['layout']}.js").read_text(encoding='utf-8')
     fonts = ''
     for f in (st.get('type') or {}).get('files', []):          # 风格包自带字体（可选）
         fp = sd / f['file']
@@ -208,10 +221,13 @@ def parse_size(aspect, size):
     return (1080, 1920) if aspect in ('9:16', 'v', '竖') else (1920, 1080)
 
 def render(style, text, dur=3.0, aspect='9:16', size=None, fps=30, mode='anim', items=None, emphasis=None,
-           out=None, keyframes=False, label=None, at=None, chrome=None, quiet=False):
+           out=None, keyframes=False, label=None, at=None, chrome=None, quiet=False, layout=None):
     sd = find_style(style); st = load_style(sd)
     w, h = parse_size(aspect, size)
-    scene = {'text': text, 'dur': float(dur), 'w': w, 'h': h, 'mode': mode,
+    layout = layout or pick_layout(text)
+    if layout not in LAYOUTS:
+        sys.exit(f'版式只能是：{"、".join(LAYOUTS)}')
+    scene = {'text': text, 'dur': float(dur), 'w': w, 'h': h, 'mode': mode, 'layout': layout,
              'items': [x for x in (items or '').split('|') if x.strip()] if isinstance(items, str) else (items or []),
              'emphasis': emphasis or ''}
     page_h = h + (LABEL_H if label else 0)
@@ -275,9 +291,13 @@ def main():
     ap.add_argument('--items'); ap.add_argument('--emphasis')
     ap.add_argument('--keyframes', action='store_true'); ap.add_argument('--at', type=float)
     ap.add_argument('--label'); ap.add_argument('--out')
+    ap.add_argument('--layout', choices=LAYOUTS, help='不填就按这句话自动配：principle 讲原理 / numbers 比数字 / tool 演示工具 / news 讲新闻 / conclusion 讲结论')
+    ap.add_argument('--which-layout', action='store_true', help='只打印这句会配到哪个版式')
     a = ap.parse_args()
+    if a.which_layout:
+        l = pick_layout(a.text); print(l, LAYOUT_CN[l]); return
     fps = int(a.fps) if float(a.fps).is_integer() else a.fps
-    for r in render(a.style, a.text, a.dur, a.aspect, a.size, fps, a.mode, a.items, a.emphasis, a.out, a.keyframes, a.label, a.at):
+    for r in render(a.style, a.text, a.dur, a.aspect, a.size, fps, a.mode, a.items, a.emphasis, a.out, a.keyframes, a.label, a.at, layout=a.layout):
         print(r)
 
 if __name__ == '__main__':

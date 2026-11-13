@@ -1,0 +1,137 @@
+{
+  "id": "deep-glass",
+  "name": "深空玻璃",
+  "vibe": "科技发布会：深色、柔光、毛玻璃，克制又贵",
+  "inspired_by": [
+    "Apple 发布会的产品片",
+    "Cleo Abram（Huge If True）的科技讲解画面"
+  ],
+  "fit": "AI、科技产品、未来趋势、工具演示",
+  "tags": [
+    "dark",
+    "tech",
+    "calm"
+  ],
+  "palette": {
+    "bg": "#06070A",
+    "ink": "#F5F5F7",
+    "accent": "#8EA2FF",
+    "accent2": "#5EE6D0",
+    "muted": "#8E8E99",
+    "line": "#3A3D4A"
+  },
+  "background": {
+    "base": "#06070A",
+    "glow": [
+      "rgba(96,92,230,.42)",
+      "rgba(0,160,255,.20)"
+    ],
+    "grain": 0.06,
+    "grain_blend": "overlay",
+    "vignette": 0.55
+  },
+  "surface": {
+    "kind": "glass",
+    "radius": 34,
+    "shadow": 0.7
+  },
+  "type": {
+    "head": "sans",
+    "body": "sans",
+    "head_weight": 600,
+    "body_weight": 400,
+    "head_tracking": -0.02,
+    "tracking": 0.01,
+    "scale": 1.0
+  },
+  "line": {
+    "width": 2
+  },
+  "accent_style": "glow",
+  "motion": {
+    "entrance": "blur",
+    "speed": 0.9,
+    "cuts_per_5s": 2,
+    "feel": "从模糊里慢慢清晰，像镜头对焦，停得稳"
+  },
+  "layout_rules": {
+    "margin": 0.09,
+    "align": "center",
+    "whitespace": "多，暗部留大"
+  },
+  "pace": "mid",
+  "density": "mid",
+  "sample_text": "我让 Claude 读完字幕，自动标黄，再一键出片",
+  "license": "原创（作者 kkkariel888），随本仓库 MIT 发布。只学参考频道的感觉，不含任何原图、logo、角色或品牌元素",
+  "source": "https://github.com/kkkariel888/ariel-skills",
+  "status": "上架",
+  "suits": {
+    "讲原理": 0.6,
+    "比数字": 0.5,
+    "讲新闻": 0.6,
+    "演示工具": 1.0,
+    "讲结论": 0.6
+  },
+  "verified": {
+    "style": "deep-glass",
+    "checked_at": "2026-11-13",
+    "results": {
+      "9:16 principle": {
+        "ok": true,
+        "still": "samples/principle_9x16.png"
+      },
+      "9:16 numbers": {
+        "ok": true,
+        "still": "samples/numbers_9x16.png"
+      },
+      "9:16 tool": {
+        "ok": true,
+        "still": "samples/tool_9x16.png"
+      },
+      "9:16 news": {
+        "ok": true,
+        "still": "samples/news_9x16.png"
+      },
+      "9:16 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_9x16.png"
+      },
+      "9:16 视频": {
+        "ok": true,
+        "video": "samples/sample_9x16.mp4",
+        "w": 1080,
+        "h": 1920,
+        "fps": "30/1",
+        "dur": 3.0
+      },
+      "16:9 principle": {
+        "ok": true,
+        "still": "samples/principle_16x9.png"
+      },
+      "16:9 numbers": {
+        "ok": true,
+        "still": "samples/numbers_16x9.png"
+      },
+      "16:9 tool": {
+        "ok": true,
+        "still": "samples/tool_16x9.png"
+      },
+      "16:9 news": {
+        "ok": true,
+        "still": "samples/news_16x9.png"
+      },
+      "16:9 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_16x9.png"
+      },
+      "16:9 视频": {
+        "ok": true,
+        "video": "samples/sample_16x9.mp4",
+        "w": 1920,
+        "h": 1080,
+        "fps": "30/1",
+        "dur": 3.0
+      }
+    }
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "id": "vivid-flat",
+  "name": "鲜明扁平",
+  "vibe": "科普动画：深蓝底、高饱和色块、圆润、弹",
+  "inspired_by": [
+    "Kurzgesagt – In a Nutshell 的扁平科普动画"
+  ],
+  "fit": "讲原理、讲科普、讲一个系统怎么运作",
+  "tags": [
+    "dark",
+    "playful",
+    "bright"
+  ],
+  "palette": {
+    "bg": "#141838",
+    "ink": "#FFFFFF",
+    "accent": "#FFC93C",
+    "accent2": "#FF5E62",
+    "muted": "#8C93C9",
+    "line": "#8C93C9",
+    "panel": "#232A5C"
+  },
+  "background": {
+    "base": "#141838",
+    "glow": [
+      "rgba(124,77,255,.32)",
+      "rgba(255,94,98,.16)"
+    ]
+  },
+  "surface": {
+    "kind": "flat",
+    "fill": "#232A5C",
+    "border": "rgba(255,255,255,.0)",
+    "radius": 42,
+    "shadow": 0.25
+  },
+  "type": {
+    "head": "sans",
+    "body": "sans",
+    "head_weight": 900,
+    "body_weight": 500,
+    "head_tracking": 0,
+    "tracking": 0.02,
+    "scale": 1.0
+  },
+  "line": {
+    "width": 4
+  },
+  "accent_style": "fill",
+  "motion": {
+    "entrance": "pop",
+    "speed": 1.15,
+    "cuts_per_5s": 3,
+    "feel": "色块弹出来，带一点回弹，节奏轻快"
+  },
+  "layout_rules": {
+    "margin": 0.08,
+    "align": "center",
+    "whitespace": "中"
+  },
+  "pace": "fast",
+  "density": "mid",
+  "sample_text": "复利就是利滚利，本金生利息，利息再生利息",
+  "license": "原创（作者 kkkariel888），随本仓库 MIT 发布。只学参考频道的感觉，不含任何原图、logo、角色或品牌元素",
+  "source": "https://github.com/kkkariel888/ariel-skills",
+  "status": "上架",
+  "suits": {
+    "讲原理": 1.0,
+    "比数字": 0.6,
+    "讲新闻": 0.4,
+    "演示工具": 0.6,
+    "讲结论": 0.5
+  },
+  "verified": {
+    "style": "vivid-flat",
+    "checked_at": "2026-11-13",
+    "results": {
+      "9:16 principle": {
+        "ok": true,
+        "still": "samples/principle_9x16.png"
+      },
+      "9:16 numbers": {
+        "ok": true,
+        "still": "samples/numbers_9x16.png"
+      },
+      "9:16 tool": {
+        "ok": true,
+        "still": "samples/tool_9x16.png"
+      },
+      "9:16 news": {
+        "ok": true,
+        "still": "samples/news_9x16.png"
+      },
+      "9:16 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_9x16.png"
+      },
+      "9:16 视频": {
+        "ok": true,
+        "video": "samples/sample_9x16.mp4",
+        "w": 1080,
+        "h": 1920,
+        "fps": "30/1",
+        "dur": 3.0
+      },
+      "16:9 principle": {
+        "ok": true,
+        "still": "samples/principle_16x9.png"
+      },
+      "16:9 numbers": {
+        "ok": true,
+        "still": "samples/numbers_16x9.png"
+      },
+      "16:9 tool": {
+        "ok": true,
+        "still": "samples/tool_16x9.png"
+      },
+      "16:9 news": {
+        "ok": true,
+        "still": "samples/news_16x9.png"
+      },
+      "16:9 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_16x9.png"
+      },
+      "16:9 视频": {
+        "ok": true,
+        "video": "samples/sample_16x9.mp4",
+        "w": 1920,
+        "h": 1080,
+        "fps": "30/1",
+        "dur": 3.0
+      }
+    }
+  }
+}

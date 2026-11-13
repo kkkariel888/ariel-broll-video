@@ -45,30 +45,39 @@ def all_styles(include_pending=False):
     return out
 
 # ---------- 验证上架 ----------
+SAMPLES = {'principle': '复利就是利滚利，本金生利息，利息再生利息', 'numbers': '存银行年化 2%，买指数基金长期大约 8%，差了 4 倍',
+           'tool': '我让 Claude 读完字幕，自动标黄，再一键出片', 'news': '今天 OpenAI 发布了新模型，价格直接砍半',
+           'conclusion': '所以说到底，年轻人最该投资的是自己'}
+
 def verify(name, text=None):
+    """5 种版式 × 竖横屏全部跑通才上架。视频小样各出一条，每种版式各出一张定格图。"""
     d = R.find_style(name); st = read(d / 'style.json')
-    text = text or st.get('sample_text') or '复利就是利滚利'
     sd = d / 'samples'; sd.mkdir(exist_ok=True)
-    report = {'style': st['id'], 'text': text, 'checked_at': datetime.date.today().isoformat(), 'results': {}}
+    report = {'style': st['id'], 'checked_at': datetime.date.today().isoformat(), 'results': {}}
     ok = True
     for asp, tag in [('9:16', '9x16'), ('16:9', '16x9')]:
+        size = '1080x1920' if asp == '9:16' else '1920x1080'
+        for lay, t in SAMPLES.items():
+            key = f'{asp} {lay}'
+            try:
+                png = R.render(name, text if (text and lay == R.pick_layout(text)) else t, 3.0, asp, size, at=2.96, out=str(sd / f'{lay}_{tag}.png'), layout=lay)[0]
+                first = R.render(name, t, 3.0, asp, size, at=0.0, out=str(sd / '_first.png'), layout=lay)[0]
+                moved = pathlib.Path(first).read_bytes() != pathlib.Path(png).read_bytes(); pathlib.Path(first).unlink()
+                report['results'][key] = {'ok': moved, 'still': 'samples/' + os.path.basename(png)}
+                ok &= moved
+            except Exception as e:
+                report['results'][key] = {'ok': False, 'error': str(e)[:300]}; ok = False
         try:
-            mp4 = R.render(name, text, 3.0, asp, out=str(sd / f'sample_{tag}.mp4'), quiet=True)[0]
-            png = R.render(name, text, 3.0, asp, at=2.96, out=str(sd / f'sample_{tag}.png'))[0]
-            first = R.render(name, text, 3.0, asp, at=0.0, out=str(sd / f'_first_{tag}.png'))[0]
-            moved = pathlib.Path(first).read_bytes() != pathlib.Path(png).read_bytes()
-            pathlib.Path(first).unlink()
-            info = probe(mp4)
-            good = moved and abs(info.get('dur', 0) - 3.0) < 0.15
-            report['results'][asp] = {'ok': good, 'video': 'samples/' + os.path.basename(mp4), 'still': 'samples/' + os.path.basename(png), 'moves': moved, **info}
-            ok &= good
-        except Exception as e:  # 任何一步失败都不上架
-            report['results'][asp] = {'ok': False, 'error': str(e)[:400]}; ok = False
+            mp4 = R.render(name, SAMPLES['principle'], 3.0, asp, size, out=str(sd / f'sample_{tag}.mp4'), quiet=True, layout='principle')[0]
+            info = probe(mp4); good = abs(info.get('dur', 0) - 3.0) < 0.15
+            report['results'][f'{asp} 视频'] = {'ok': good, 'video': 'samples/' + os.path.basename(mp4), **info}; ok &= good
+        except Exception as e:
+            report['results'][f'{asp} 视频'] = {'ok': False, 'error': str(e)[:300]}; ok = False
     st['status'] = '上架' if ok else '待验证'
     st['verified'] = report
     write(d / 'style.json', st)
-    print(json.dumps(report, ensure_ascii=False, indent=2))
-    print('结论：', '跑通了，已上架' if ok else '没跑通，留在待验证区（不给用户看）')
+    bad = [k for k, v in report['results'].items() if not v.get('ok')]
+    print('结论：', f"{st['name']} 跑通了 {len(report['results'])} 项，已上架" if ok else f"{st['name']} 没跑通：{'、'.join(bad)}，留在待验证区")
     return ok
 
 def probe(p):
@@ -101,8 +110,10 @@ def rank(types, stats=None):
     order = ['slow', 'mid', 'fast']; dens = ['low', 'mid', 'high']
     rows = []
     for d, st, src in all_styles():
-        cat = st.get('category')
-        s_cat = 70 * float(types.get(cat, 0))
+        suits = st.get('suits') or {st.get('category', ''): 1.0}
+        tot = sum(float(v) for v in types.values()) or 1
+        s_cat = 70 * sum(float(types.get(k, 0)) * float(suits.get(k, 0)) for k in types) / tot
+        cat = max(suits, key=suits.get) if suits else ''
         s_pace = s_den = 7.5
         if stats:
             dp = abs(order.index(st.get('pace', 'mid')) - order.index(stats['pace']))
@@ -110,7 +121,7 @@ def rank(types, stats=None):
             s_pace = [15, 7, 0][dp]; s_den = [15, 7, 0][dd]
         bonus = 3 if src == '我的' else 0          # 自己的风格同分时优先
         score = round(s_cat + s_pace + s_den + bonus, 1)
-        rows.append({'id': st['id'], 'name': st['name'], 'category': cat, 'source': src, 'path': str(d), 'score': score,
+        rows.append({'id': st['id'], 'name': st['name'], 'category': cat, 'vibe': st.get('vibe', ''), 'source': src, 'path': str(d), 'score': score,
                      'parts': {'内容': round(s_cat, 1), '语速': s_pace, '密度': s_den}})
     rows.sort(key=lambda r: -r['score'])
     return rows
@@ -151,11 +162,12 @@ def dna_new(dna_path, folder):
         sys.exit('风格 DNA 不合格：\n- ' + '\n- '.join(errs))
     name = dna.get('name') or '参考图风格'
     sid = 'draft-' + datetime.datetime.now().strftime('%m%d%H%M')
-    cat = dna.get('category') if dna.get('category') in CATEGORIES else '讲原理'
-    st = {'id': sid, 'name': name, 'category': cat, 'fit': dna.get('fit', ''), 'layout': LAYOUT_OF[cat],
+    st = {'id': sid, 'name': name, 'vibe': dna.get('vibe', ''), 'fit': dna.get('fit', ''),
+          'suits': dna.get('suits') or {c: 0.7 for c in CATEGORIES},
           'palette': dna['palette'], 'background': dna.get('background', {'texture': 'plain'}),
           'layout_rules': dna.get('layout_rules', {}), 'type': dna.get('type', {}), 'line': dna.get('line', {'width': 3}),
-          'motion': dna.get('motion', {}), 'density': dna.get('density', 'mid'), 'pace': dna.get('pace', 'mid'),
+          'motion': dna.get('motion', {}), 'surface': dna.get('surface', {'kind': 'outline'}),
+          'accent_style': dna.get('accent_style', 'fill'), 'density': dna.get('density', 'mid'), 'pace': dna.get('pace', 'mid'),
           'license': '从用户参考图提炼的风格 DNA（只记配色、质感、版式、字重、线条、动效），不含原图素材',
           'source': '用户参考图', 'status': '草稿', 'not_copied': NO_COPY,
           'sample_text': dna.get('sample_text', '')}
@@ -191,7 +203,7 @@ def main():
     a = ap.parse_args()
     if a.cmd == 'list':
         for d, st, src in all_styles(a.all):
-            print(f"{st['id']:<16}{st['name']:<10}{st.get('category',''):<6}{st.get('status',''):<6}{src}")
+            print(f"{st['id']:<18}{st['name']:<8}{st.get('status',''):<6}{src}  {st.get('vibe','')}")
     elif a.cmd == 'verify':
         sys.exit(0 if verify(a.style, a.text) else 1)
     elif a.cmd == 'rank':

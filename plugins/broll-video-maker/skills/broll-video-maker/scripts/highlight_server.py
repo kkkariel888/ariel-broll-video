@@ -252,29 +252,50 @@ class StyleFlow:
             if abs(la - lb) > 0.3: out.append("深色底" if lb < la else "浅色底")
         except Exception:
             pass
-        if a.get("category") != b.get("category"): out.append("主打" + b.get("category", ""))
+        if a.get("surface", {}).get("kind") != b.get("surface", {}).get("kind"):
+            out.append({"glass": "毛玻璃卡片", "paper": "纸片质感", "flat": "纯色块", "outline": "细线框"}.get(b.get("surface", {}).get("kind"), ""))
+        fa, fb = a.get("type", {}).get("head"), b.get("type", {}).get("head")
+        if fa != fb: out.append("宋体标题" if fb == "serif" else "黑体标题")
         sa, sb = a.get("motion", {}).get("speed", 1), b.get("motion", {}).get("speed", 1)
         if sb - sa > 0.15: out.append("动得更快")
         elif sa - sb > 0.15: out.append("动得更慢更稳")
-        if a.get("layout") != b.get("layout"):
-            out.append({"principle": "用线把环节连起来", "numbers": "数字和柱子当主角", "tool": "窗口里打字演示"}.get(b.get("layout"), ""))
         return "跟上一个比：" + "、".join(x for x in out if x) if out else "跟上一个是同一类，换了配色"
+
+    def _pick_three(self, R):
+        """挑 3 句不同版式的原话做样图：同一个风格碰上不同内容是什么样，一眼看清。"""
+        rk = self._ranking() or {}
+        if rk.get("samples"):
+            return rk["samples"][:3]
+        out, seen = [], set()
+        hs = self._highlights()
+        for h in sorted(hs, key=lambda h: -min(len(h.get("text", "")), 26)):
+            lay = R.pick_layout(h.get("text", ""))
+            if lay in seen: continue
+            seen.add(lay); st, en = h.get("startTime"), h.get("endTime")
+            dur = max(2.0, min(4.0, en - st)) if isinstance(st, (int, float)) and isinstance(en, (int, float)) and en > st else 3.0
+            tm = "%02d:%02d" % (int(st) // 60, int(st) % 60) if isinstance(st, (int, float)) else ""
+            out.append({"no": h.get("no", ""), "text": h.get("text", ""), "time": tm, "dur": dur, "layout": lay})
+            if len(out) == 3: break
+        for h in hs:                      # 不够 3 种版式就用剩下的句子补
+            if len(out) >= 3: break
+            if not any(o["text"] == h.get("text") for o in out):
+                out.append({"no": h.get("no", ""), "text": h.get("text", ""), "time": "", "dur": 3.0, "layout": R.pick_layout(h.get("text", ""))})
+        return out or [{"no": "", "text": "复利就是利滚利，本金生利息，利息再生利息", "time": "", "dur": 3.0, "layout": "principle"}]
 
     def _render_card(self, row, why):
         R, T = self._tools()
         sd = R.find_style(row["path"]); style = json.load(open(os.path.join(sd, "style.json"), encoding="utf-8"))
         rk = self._ranking() or {}
-        sen = self._pick_sentence(style, rk)
         os.makedirs(self.img_dir, exist_ok=True)
-        tmp = os.path.join(self.img_dir, "_tmp_" + style["id"])
-        label = (f'{sen["no"]} · {sen["time"]}：{sen["text"]}' if sen.get("no") else sen["text"])
-        R.render(str(sd), sen["text"], sen.get("dur", 3), rk.get("aspect", "9:16"), rk.get("size"), 30, self.st["mode"] or "anim",
-                 None, None, tmp, True, label)
-        img = f'{style["id"]}_{self.st["mode"]}.png'
-        os.replace(os.path.join(tmp, "2_最满.png"), os.path.join(self.img_dir, img))
-        import shutil; shutil.rmtree(tmp, ignore_errors=True)
-        return {"id": style["id"], "name": style["name"], "category": style.get("category", ""), "why": why, "img": "samples/" + img,
-                "path": str(sd), "score": row.get("score"), "sentence": sen, "_style": style}
+        imgs = []
+        for i, sen in enumerate(self._pick_three(R)):
+            label = (f'{sen["no"]} · {sen["time"]}：{sen["text"]}' if sen.get("no") else sen["text"])
+            img = f'{style["id"]}_{self.st["mode"]}_{i+1}.png'
+            R.render(str(sd), sen["text"], sen.get("dur", 3), rk.get("aspect", "9:16"), rk.get("size"), 30, self.st["mode"] or "anim",
+                     None, None, os.path.join(self.img_dir, img), False, label, sen.get("dur", 3) - 0.04, layout=sen.get("layout"))
+            imgs.append({"img": "samples/" + img, "layout": R.LAYOUT_CN.get(sen.get("layout"), ""), "no": sen.get("no", "")})
+        return {"id": style["id"], "name": style["name"], "category": style.get("vibe", ""), "why": why, "img": imgs[0]["img"], "imgs": imgs,
+                "path": str(sd), "score": row.get("score"), "sentence": None, "_style": style}
 
     def _bg(self, fn):
         def run():
@@ -292,7 +313,7 @@ class StyleFlow:
             with self.lock: self.st.update(phase="error", msg="没有上架的风格。")
             return
         r = rows[0]
-        why = r.get("why") or f'这期「{r.get("category","")}」的内容最多，{r["name"]}专门做这一类。'
+        why = r.get("why") or f'这期内容和「{r["name"]}」最搭：{r.get("vibe","")}。下面 3 张用的是你这期 3 句不同类型的原话。'
         card = self._render_card(r, why)
         with self.lock:
             self.st.update(phase="choose", cards=[card], shown=[r["id"]], msg="")
@@ -315,7 +336,7 @@ class StyleFlow:
     def _choose(self, card):
         R, T = self._tools()
         choice = {"confirmed": True, "style_id": card["id"], "name": card["name"], "path": card["path"], "mode": self.st["mode"],
-                  "sample": card.get("sentence"), "image": os.path.join(self.dir, card["img"].replace("samples/", "风格样图/")),
+                  "images": [os.path.join(self.dir, x["img"].replace("samples/", "风格样图/")) for x in card.get("imgs", [])],
                   "at": time.strftime("%Y-%m-%d %H:%M:%S")}
         tmp = self.choice_path + ".tmp"
         json.dump(choice, open(tmp, "w", encoding="utf-8"), ensure_ascii=False, indent=2); os.replace(tmp, self.choice_path)

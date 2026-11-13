@@ -1,0 +1,136 @@
+{
+  "id": "editorial-paper",
+  "name": "编辑部纸感",
+  "vibe": "深度报道：米色纸、宋体大标题、荧光笔划重点",
+  "inspired_by": [
+    "Vox 的解释类视频",
+    "Johnny Harris 的纪录片式剪辑"
+  ],
+  "fit": "讲新闻、讲观点、讲历史、讲一件事的来龙去脉",
+  "tags": [
+    "light",
+    "editorial",
+    "warm"
+  ],
+  "palette": {
+    "bg": "#EEE8DC",
+    "ink": "#161514",
+    "accent": "#C8102E",
+    "accent2": "#1F4E79",
+    "muted": "#7B7468",
+    "line": "#2A2826",
+    "marker": "#FFD84D",
+    "panel": "#FBF8F1"
+  },
+  "background": {
+    "texture": "paper",
+    "grain": 0.13,
+    "vignette": 0.18
+  },
+  "surface": {
+    "kind": "paper",
+    "fill": "#FBF8F1",
+    "border": "rgba(0,0,0,.06)",
+    "radius": 4,
+    "shadow": 0.45
+  },
+  "type": {
+    "head": "serif",
+    "body": "sans",
+    "head_weight": 900,
+    "body_weight": 500,
+    "head_tracking": -0.01,
+    "tracking": 0.02,
+    "scale": 1.0
+  },
+  "line": {
+    "width": 2
+  },
+  "accent_style": "marker",
+  "motion": {
+    "entrance": "rise",
+    "speed": 1.0,
+    "cuts_per_5s": 2,
+    "feel": "纸片轻轻落下，荧光笔一笔划过"
+  },
+  "layout_rules": {
+    "margin": 0.08,
+    "align": "left",
+    "whitespace": "中"
+  },
+  "pace": "mid",
+  "density": "mid",
+  "sample_text": "今天 OpenAI 发布了新模型，价格直接砍半",
+  "license": "原创（作者 kkkariel888），随本仓库 MIT 发布。只学参考频道的感觉，不含任何原图、logo、角色或品牌元素",
+  "source": "https://github.com/kkkariel888/ariel-skills",
+  "status": "上架",
+  "suits": {
+    "讲原理": 0.6,
+    "比数字": 0.6,
+    "讲新闻": 1.0,
+    "演示工具": 0.4,
+    "讲结论": 0.8
+  },
+  "verified": {
+    "style": "editorial-paper",
+    "checked_at": "2026-11-13",
+    "results": {
+      "9:16 principle": {
+        "ok": true,
+        "still": "samples/principle_9x16.png"
+      },
+      "9:16 numbers": {
+        "ok": true,
+        "still": "samples/numbers_9x16.png"
+      },
+      "9:16 tool": {
+        "ok": true,
+        "still": "samples/tool_9x16.png"
+      },
+      "9:16 news": {
+        "ok": true,
+        "still": "samples/news_9x16.png"
+      },
+      "9:16 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_9x16.png"
+      },
+      "9:16 视频": {
+        "ok": true,
+        "video": "samples/sample_9x16.mp4",
+        "w": 1080,
+        "h": 1920,
+        "fps": "30/1",
+        "dur": 3.0
+      },
+      "16:9 principle": {
+        "ok": true,
+        "still": "samples/principle_16x9.png"
+      },
+      "16:9 numbers": {
+        "ok": true,
+        "still": "samples/numbers_16x9.png"
+      },
+      "16:9 tool": {
+        "ok": true,
+        "still": "samples/tool_16x9.png"
+      },
+      "16:9 news": {
+        "ok": true,
+        "still": "samples/news_16x9.png"
+      },
+      "16:9 conclusion": {
+        "ok": true,
+        "still": "samples/conclusion_16x9.png"
+      },
+      "16:9 视频": {
+        "ok": true,
+        "video": "samples/sample_16x9.mp4",
+        "w": 1920,
+        "h": 1080,
+        "fps": "30/1",
+        "dur": 3.0
+      }
+    }
+  }
+}

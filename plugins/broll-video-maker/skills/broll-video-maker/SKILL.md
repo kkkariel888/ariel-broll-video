@@ -1,6 +1,6 @@
 ---
 name: broll-video-maker
-description: 用户给一个装着剪映 SRT 字幕和口播视频的文件夹，自动审错别字、在侧边仿 Word 页面标黄，再按内容自动挑风格、用这期原话出样图，点一下就选定，然后出逐帧图、对齐语速出片。Claude 和 Codex 通用。
+description: 用户给一个装着剪映 SRT 字幕和口播视频的文件夹，自动审错别字、在侧边仿 Word 页面标黄，再按内容推荐一个高级风格（5 个内置 + 参考图 + GitHub 导入）、用这期原话出样图点一下选定，每句自动配版式，出逐帧图、对齐语速出片。Claude 和 Codex 通用。
 ---
 
 # 口播配动画 B-roll（1.1 · Claude / Codex 通用）
@@ -46,58 +46,56 @@ description: 用户给一个装着剪映 SRT 字幕和口播视频的文件夹�
 
 ## 第 5 步：风格（Agent 先读内容再挑，用户只点一下）
 
+### 风格和版式是两回事
+- **风格 = 长相**：配色、字体、质感、卡片、动效感觉。**一条视频只用一个风格**，整期统一。
+- **版式 = 画面结构**：讲原理（编号卡片串起来）/ 比数字（柱子 + 数字滚动）/ 演示工具（窗口打字）/ 讲新闻（标题卡 + 荧光笔）/ 讲结论（大字逐行浮出）。**每一处标黄按这句话自动配**（`render.py` 里的 `pick_layout`：有数字→比数字，发布/宣布/日期→讲新闻，软件/工具/英文名→演示工具，所以/总之/记住→讲结论，其余→讲原理），Agent 可以用 `--layout` 改判。
+- 所以一条视频里五类内容混着讲也没关系：风格选一次，版式每句自己配。某一张配得不合适，到逐帧审稿时单独改。
+
+### 风格从哪来（三条路，最后都是同一种风格包）
+1. **内置 5 个**（按气质分，参考 YouTube 顶尖动效频道的感觉自研，不含原图素材）：
+   | id | 名字 | 气质 | 学的是谁的感觉 |
+   |---|---|---|---|
+   | deep-glass | 深空玻璃 | 深色、柔光、毛玻璃，克制又贵 | Apple 发布会、Cleo Abram |
+   | editorial-paper | 编辑部纸感 | 米色纸、宋体大标题、荧光笔划重点 | Vox、Johnny Harris |
+   | noir-minimal | 极简黑白 | 纯黑、宋体、大留白、慢 | LEMMiNO |
+   | vivid-flat | 鲜明扁平 | 深蓝底、高饱和色块、圆润、弹 | Kurzgesagt |
+   | swiss-data | 克制数据 | 浅灰白、网格、一个信号红、精确 | Polymatter、瑞士排版 |
+2. **参考图**：用户发图，Agent 按 `references/style-dna.md` 提炼风格 DNA，学感觉不抄图 → 当期草稿 → 满意了存进「我的风格」。
+3. **GitHub 开源导入**：用户发链接，Agent 先查许可证（必须写清是 MIT / Apache / BSD / CC0），只把它的配色、字体、动效数值翻译成风格包（不搬代码），来源和原作者署名写进 `license` / `source`，跑通后存进「我的风格」。没写许可证或不允许改的，直接告诉用户不能用。
+
 ### 风格包长什么样
-每个风格一个文件夹 `styles/<id>/`：
-- `style.json`：配色 `palette`、背景质感 `background`、版式留白 `layout_rules`、字体 `type`（一律思源黑体，可在 `type.files` 带可商用字体文件）、线条 `line`、动效 `motion`（进场方式、速度、每 5 秒换几次画面）、适合讲什么 `category` / `fit` / `not_for`、用哪套代码模板 `layout`、许可证 `license`、来源 `source`、状态 `status`、验证记录 `verified`
-- `samples/`：验证时跑出来的竖横屏小样
-代码模板在 `styles/_layouts/`（principle 讲原理 / numbers 比数字 / tool 演示工具），共用零件在 `styles/_engine/`。
+`styles/<id>/style.json`：`palette`（bg / ink / accent / accent2 / muted / line / marker）、`background`（base、glow 柔光、texture、grain 颗粒、vignette 暗角）、`surface`（卡片：glass / paper / flat / outline，圆角、阴影）、`type`（head / body 用 sans 或 serif，一律思源黑体 / 思源宋体，字重、字距）、`line`、`accent_style`（marker 荧光笔 / underline / glow / fill）、`motion`（进场、速度、每 5 秒换几次画面）、`suits`（适合 5 类内容的程度 0~1）、`vibe`、`inspired_by`、`license`、`source`、`status`、`verified`。
+`samples/` 里是验证时跑出来的小样。代码模板在 `styles/_layouts/`，共用零件在 `styles/_engine/`。旧的 3 个风格在 `styles/_retired/`，不参与推荐。
 
 ### 统一出图接口
-一句话 + 时长 + 竖/横屏 → 关键帧或小视频：
 ```
 python3 scripts/render.py --style <id 或风格文件夹> --text "原话" --dur 3 --aspect 9:16 [--size 1080x1920 --fps 30] \
-  [--mode anim|text] [--items "环节1|环节2|环节3"] [--emphasis "重点词"] \
+  [--layout principle|numbers|tool|news|conclusion] [--mode anim|text] [--items "环节1|环节2"] [--emphasis "重点词"] \
   ( --out B3.mp4 | --keyframes --label "B3 · 00:41：原话" --out 逐帧图/B3 | --at 1.2 --out 图.png )
+python3 scripts/render.py --style x --text "原话" --which-layout     # 只看这句会配到哪个版式
 ```
-`--items` 可以替模板拆好环节或给柱子起名；`--emphasis` 指定强调的词。
 
-### 内置风格：按内容分，不按好看分
-| 内容类型 | 风格 | 状态 |
-|---|---|---|
-| 讲原理 | 单线条风 `line-minimal` | 上架 |
-| 比数字 | 数据叙事 `data-story` | 上架 |
-| 演示工具 | 黑暗极客风 `dark-geek` | 上架 |
-| 讲新闻 | 待做（验证完再补） | — |
-| 讲结论 | 待做（验证完再补） | — |
-只有 `status` 是「上架」的风格和用户「我的风格」会参与打分、出现在页面上。`待验证`、`草稿` 的不给用户看。
+### 打分（默认只推第 1 名）
+1. Agent 读完整份字幕，判断这期 5 类内容各占多少，比如 `{"比数字":0.4,"讲原理":0.3,"演示工具":0.2,"讲结论":0.1}`。
+2. `python3 scripts/styles_tool.py rank --types '<比例>' --srt 字幕_修正.srt --out <用户的文件夹>/风格排名.json`
+   分数 = 内容和风格的搭配度 70（按 `suits` 加权）+ 语速匹配 15 + 信息密度匹配 15（脚本从字幕自动算）；「我的风格」同分 +3。
+3. 可以给排名里的每项加一句 `why`；不加页面会自动写。
 
-### 打分
-1. Agent 读完整份字幕，判断这期内容在 5 类里各占多少（加起来是 1），比如讲期权策略：`{"讲原理":0.4,"比数字":0.5,"讲结论":0.1}`。
-2. 跑：`python3 scripts/styles_tool.py rank --types '<上面的比例>' --srt 字幕_修正.srt --out <用户的文件夹>/风格排名.json`
-   分数 = 内容类型匹配 70 + 语速匹配 15 + 信息密度匹配 15（语速、密度脚本从字幕自动算）；「我的风格」同分时 +3。
-3. 可以给排名里的每项加一句 `why`（为什么适合这期），不加页面会自动写。
-
-### 页面上的三个按钮（小助手自动处理，Agent 不用插手）
-- 默认只给第 1 名，样图用这期**真句子**出（自动挑最适合这个风格的那处标黄，图下标着「B? · 时间：原话」）。
+### 页面上的三个按钮（小助手自动处理）
+- 默认给第 1 名，配 **3 张样图**：用这期 3 句**不同版式**的原话，让用户一眼看到这个风格碰上不同内容的样子。
 - **就这个**：写出 `风格选择.json`，并在本机记下「上次那个」。
-- **换一个**：给接下来最接近的 2 个，每个配一句「跟上一个比：哪里不同」。
-- **用上次那个**：直接用上次选的风格（只有桌面版 Claude 和 Codex 能记住；网页版碰不到本机文件，记不住）。
+- **换一个**：给接下来最接近的 2 个风格，各 3 张样图，配一句「跟上一个比：哪里不同」。
+- **用上次那个**：直接用上次的风格（桌面版 Claude 和 Codex 能记住；网页版记不住）。
 
-### 用户发参考图
-按 `references/style-dna.md`：Agent 自己看图提炼风格 DNA（主色 3~5 个、背景质感、版式留白、字体粗细大小、线条粗细、进场方式、速度节奏、每 5 秒换几次画面），**不抄** logo、真人脸、品牌名、角色、原图具体画面。
-`styles_tool.py dna-new` 生成当期草稿 → 用这期一句原话出样图 → 满意了 `styles_tool.py save-mine` 存进「我的风格」，不满意只留在当期文件夹。
-
-### 新风格怎么进来（包括开源的）
-- 开源只收：许可证写清是 MIT / Apache / BSD；有能跑的代码或模板；能接成本接口；支持中文、能换思源黑体；有 demo、半年内有更新。缺一条不收。核验记录写在 `styles/_pending/README.md`。
-- 收进来先用一句真话跑：`python3 scripts/styles_tool.py verify <风格>`，竖横屏 3 秒小样都跑通才自动改成「上架」，没跑通留在待验证区。
-- Remotion 不是 MIT（超过 3 人的盈利公司要买公司版），不收进内置；Manim 是 MIT，可以用。
+### 新风格上架
+`python3 scripts/styles_tool.py verify <风格>`：5 种版式 × 竖横屏全部出图、画面会动，再各出一条 3 秒视频，12 项全过才改成「上架」，否则留在待验证区不给用户看。开源工具 / 风格的核验记录在 `styles/_pending/README.md`。
 
 ### 没有小助手时（Claude 网页版等）
-自己跑 `rank` 和 `render.py --at` 出第 1 名的样图发在对话里，用能点的选项问「就这个 / 换一个」，不让用户打字。网页版不提供「用上次那个」。
+自己跑 `rank`，用 `render.py --at` 给第 1 名出 3 张样图发在对话里，用能点的选项问「就这个 / 换一个」。
 
 ## 第 6 步：逐帧图审稿
 - 先出图，全部确认前不渲染视频。
-- 每个 B 编号出关键帧：`render.py --style <选定的> --text "原话" --dur <endTime-startTime> --keyframes --label "B3 · 00:41：原话" --mode <选定的>`，得到开场、最满、定格 3 张。
+- 每个 B 编号出关键帧：`render.py --style <选定的> --text "原话" --dur <endTime-startTime> --keyframes --label "B3 · 00:41：原话" --mode <选定的>`（版式自动配，用户说「这张换成数字的」就加 `--layout numbers` 重出），得到开场、最满、定格 3 张。
 - 模板版式不够表达这句时，Agent 可以照风格包的配色、字体、动效另写画面，但颜色、字重、线条、进场方式必须跟 style.json 一致。
 - 一张一张单独发，绝不拼成大图；图下的标注不进最终视频。
 - 用户点名改哪张只改哪张。确认过的存进 `已确认逐帧图/`。
@@ -122,5 +120,5 @@ python3 scripts/render.py --style <id 或风格文件夹> --text "原话" --dur 
 
 ## 致谢
 - 动效底层（弹簧、淡入淡出函数 `styles/_engine/motion.js`）来自 Barty-Bart/motion-graphics（Bart Slodyczka，MIT），原版权声明见 `styles/_engine/LICENSE-motion-graphics.txt`。
-- 「数据叙事」参考了 Lemo-Opuscar（MIT）的风格描述，代码为本仓库重写。
-- 字体：思源黑体（Source Han Sans / Noto Sans CJK，SIL OFL 1.1）。
+- 内置 5 个风格参考了 Apple 发布会、Cleo Abram、Vox、Johnny Harris、LEMMiNO、Kurzgesagt、Polymatter 的画面感觉，配色和参数为本仓库自研，不含任何原图、logo、角色。
+- 字体：思源黑体 / 思源宋体（Source Han Sans / Serif，即 Noto Sans / Serif CJK，SIL OFL 1.1）。
