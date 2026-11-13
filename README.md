@@ -211,7 +211,9 @@ codex plugin add broll-video-maker@ariel-broll-video
 
 - **自动审查许可证**：你发别人的 GitHub 链接，AI 先读它的许可证，给出四种结论：**可以用 / 分块看 / 有限制 / 不能用**。没写许可证的默认不能用，公开不等于免费。
 - **这个仓库里不带别人的东西**：Lemo-Opuscar 的风格说明不允许被打包进别的产品里发出去，但允许「读它、照它做你自己的片子」。所以这里一个字都没搬，而是让 AI 在你自己电脑上现下载、现读。
-- **你做出来的片子归你**，商用也行，不用署名。
+- **你做出来的片子归你**，商用也行，不用署名（Lemo 的许可证原文这么写）。
+- **自动避开不能用的东西**：Lemo 里有一个风格要重画真实 App 的界面，还带着别家公司的小角色，这些商标不在它的授权里，skill 直接不选它。所有风格也都照它的说明，不画真实品牌的名字、界面和 logo。
+- **不能拿去卖**：Lemo 的风格说明不能单独拿出来卖，也不能放进收费的产品或服务里。这个 skill 是免费开源的，只在你自己电脑上读它来做你的片子，在它允许的范围内。
 - **字体**：风格里点名的免费开源字体会自动下载，许可证文件跟着字体一起放好。
 
 <p align="right">(<a href="#readme-top">回到顶部</a>)</p>
@@ -301,7 +303,7 @@ skill 本身能用。一键安装脚本目前只支持 Mac 和 Linux，Windows �
 
 ## 致谢
 
-- [Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar) by Lemomo（LemoLab）：近百种开源影片风格库，本 skill 的风格来源
+- 风格库：[Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar) by Lemomo (LemoLab)。风格说明采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)，并附加授权「读它、照它、改它来做你自己的片子（含商用片）」；代码采用 MIT。本仓库没有收录、也没有修改它的任何文件，使用时从官方仓库下载到你自己的电脑
 - 思源黑体 / 思源宋体、霞鹜漫黑等开源字体（SIL OFL 1.1）
 - 本 README 的结构参考了 [Best-README-Template](https://github.com/othneildrew/Best-README-Template)、[standard-readme](https://github.com/RichardLitt/standard-readme) 和 [Art of README](https://github.com/hackergrrl/art-of-readme)
 
