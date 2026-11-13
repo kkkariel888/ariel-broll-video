@@ -14,8 +14,10 @@
   4. 你每改一下都自动保存；点「确认标黄」后，在项目文件夹里写出：
        标黄结果.json      —— AI 读这个继续干活
        标黄逐字稿.docx    —— 带黄色高亮的 Word 版，你可以直接用 Word 打开
+  5. 确认后页面接着让你选风格（文字多/动画多 → 样图 → 就这个/换一个/用上次那个）：
+     读 Agent 写的 风格排名.json（候选 + 已画好的样图），选好写出 风格选择.json
 """
-import argparse, json, os, re, socket, sys, zipfile, threading
+import argparse, json, os, re, socket, sys, time, urllib.parse, zipfile, threading
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
@@ -181,6 +183,91 @@ def free_port(want):
     raise SystemExit("找不到空闲端口")
 
 
+
+# ---------------- 选风格（标黄确认后，页面上点一下就行） ----------------
+class StyleFlow:
+    """读 Agent 写好的 风格排名.json（候选风格 + Agent 已经用这期原话画好的样图），
+    处理「就这个 / 换一个 / 用上次那个」，选好写出 风格选择.json。小助手自己不画图。"""
+    def __init__(self, out_dir):
+        self.dir = out_dir
+        self.rank_path = os.path.join(out_dir, "风格排名.json")
+        self.choice_path = os.path.join(out_dir, "风格选择.json")
+        self.home = os.environ.get("BROLL_HOME", os.path.join(os.path.expanduser("~"), ".broll-video-maker"))
+        self.last_path = os.path.join(self.home, "last.json")
+        self.lock = threading.Lock()
+        self.st = {"phase": "mode", "mode": None, "shown": [], "cur": [], "msg": "", "chosen": None}
+        try:
+            c = json.load(open(self.choice_path, encoding="utf-8"))
+            if c.get("confirmed"): self.st.update(phase="done", mode=c.get("mode"), chosen=c)
+        except Exception:
+            pass
+
+    def _cands(self):
+        try:
+            d = json.load(open(self.rank_path, encoding="utf-8"))
+        except Exception:
+            return []
+        out = []
+        for c in d.get("candidates", []):
+            imgs = [x for x in c.get("samples", []) if os.path.exists(os.path.join(self.dir, x))]
+            if imgs: out.append(dict(c, samples=imgs))
+        return out
+
+    def _card(self, c):
+        return {"id": c["slug"], "name": c.get("name", c["slug"]), "why": c.get("why", ""), "source": c.get("source", "lemo"),
+                "imgs": [{"img": "samples/" + urllib.parse.quote(x), "layout": ""} for x in c["samples"]]}
+
+    def state(self):
+        with self.lock:
+            st = dict(self.st)
+            if st["phase"] in ("waiting", "choose") and not st["cur"]:
+                cs = self._cands()
+                if cs:
+                    self.st.update(phase="choose", cur=[cs[0]["slug"]], shown=[cs[0]["slug"]]); st = dict(self.st)
+        cs = {c["slug"]: c for c in self._cands()}
+        st["cards"] = [self._card(cs[s]) for s in st["cur"] if s in cs]
+        try:
+            st["last"] = json.load(open(self.last_path, encoding="utf-8"))
+        except Exception:
+            st["last"] = None
+        return st
+
+    def _choose(self, slug, from_last=None):
+        cs = {c["slug"]: c for c in self._cands()}
+        c = cs.get(slug) or from_last
+        if not c: return
+        choice = {"confirmed": True, "slug": c["slug"], "name": c.get("name", c["slug"]), "source": c.get("source", "lemo"),
+                  "style_md": c.get("style_md", ""), "mode": self.st["mode"],
+                  "images": [os.path.join(self.dir, x) for x in c.get("samples", [])], "at": time.strftime("%Y-%m-%d %H:%M:%S")}
+        tmp = self.choice_path + ".tmp"
+        json.dump(choice, open(tmp, "w", encoding="utf-8"), ensure_ascii=False, indent=2); os.replace(tmp, self.choice_path)
+        os.makedirs(self.home, exist_ok=True)
+        json.dump({k: choice[k] for k in ("slug", "name", "source", "style_md")}, open(self.last_path, "w", encoding="utf-8"), ensure_ascii=False)
+        self.st.update(phase="done", chosen=choice, msg="")
+        print(f"[风格已选] {choice['name']} → {self.choice_path}", flush=True)
+
+    def act(self, d):
+        a = d.get("act")
+        with self.lock:
+            if a == "mode":
+                self.st.update(mode="text" if d.get("mode") == "text" else "anim", phase="waiting", cur=[], shown=[], msg="")
+            elif a == "ok":
+                self._choose(d.get("id"))
+            elif a == "next":
+                cs = self._cands(); rest = [c["slug"] for c in cs if c["slug"] not in self.st["shown"]][:2]
+                if rest:
+                    self.st.update(cur=rest, shown=self.st["shown"] + rest, msg="")
+                else:
+                    self.st["msg"] = "AI 提前画好的候选都给你看过了。回到对话里说一声「再换」，AI 接着挑、接着画。"
+            elif a == "last":
+                try:
+                    lp = json.load(open(self.last_path, encoding="utf-8"))
+                    self._choose(lp["slug"], from_last=lp)
+                except Exception:
+                    self.st["msg"] = "还没有「上次」的记录：这是第一次选。"
+            elif a == "reopen":
+                self.st.update(phase="choose", chosen=None)
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("transcript")
@@ -204,6 +291,7 @@ def main():
     with open(TEMPLATE, encoding="utf-8") as f:
         page = f.read().replace("__DATA__", json.dumps({"title": title, "blocks": blocks}, ensure_ascii=False))
     lock = threading.Lock()
+    flow = StyleFlow(out_dir)
 
     class H(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -222,6 +310,16 @@ def main():
             path = self.path.split("?")[0]
             if path in ("/", "/index.html"):
                 self.send(200, page, "text/html; charset=utf-8")
+            elif path == "/api/style":
+                self.send(200, json.dumps(flow.state(), ensure_ascii=False), "application/json; charset=utf-8")
+            elif path.startswith("/samples/"):
+                fp = os.path.normpath(os.path.join(out_dir, urllib.parse.unquote(path[len("/samples/"):])))
+                if not fp.startswith(out_dir): fp = ""
+                if fp and os.path.exists(fp):
+                    with open(fp, "rb") as f:
+                        self.send(200, f.read(), "image/jpeg" if fp.lower().endswith((".jpg", ".jpeg")) else "image/png")
+                else:
+                    self.send(404, "not found", "text/plain")
             elif path == "/api/state":
                 if os.path.exists(state_path):
                     with open(state_path, encoding="utf-8") as f:
@@ -232,9 +330,16 @@ def main():
                 self.send(404, "not found", "text/plain")
 
         def do_POST(self):
-            if self.path.split("?")[0] != "/api/save":
-                return self.send(404, "not found", "text/plain")
+            path = self.path.split("?")[0]
             n = int(self.headers.get("Content-Length", "0"))
+            if path == "/api/style":
+                try:
+                    flow.act(json.loads(self.rfile.read(n).decode("utf-8")))
+                except Exception as e:
+                    return self.send(400, json.dumps({"ok": False, "err": str(e)}), "application/json")
+                return self.send(200, json.dumps(flow.state(), ensure_ascii=False), "application/json; charset=utf-8")
+            if path != "/api/save":
+                return self.send(404, "not found", "text/plain")
             try:
                 data = json.loads(self.rfile.read(n).decode("utf-8"))
             except Exception:
