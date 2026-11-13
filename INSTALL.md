@@ -3,14 +3,14 @@
 > 用户把这个仓库链接发给你，说「帮我装上」，你就照下面做完，**一次做完，不要分几轮问**。
 > 跟用户说话用中文、大白话；只有真的需要用户本人点一下的，才停下来叫他。
 
-这个仓库同时是 Claude 和 Codex 的插件市场：
+这个仓库只装一个 skill：broll-video-maker（口播配动画 B-roll）。它同时按 Claude 和 Codex 的格式摆好：
 - Claude 读 `.claude-plugin/marketplace.json`，插件信息在 `plugins/<名字>/.claude-plugin/plugin.json`
 - Codex 读 `.agents/plugins/marketplace.json`，插件信息在 `plugins/<名字>/.codex-plugin/plugin.json`
 - 两边用的是同一份 skill：`plugins/broll-video-maker/skills/broll-video-maker/`
 
 ## 1. 能跑命令（Claude Code、Codex 命令行、Codex 桌面 app、连着电脑的 Claude app）：一条命令装好全部
 ```bash
-git clone --depth 1 https://github.com/kkkariel888/ariel-skills.git /tmp/ariel-skills && bash /tmp/ariel-skills/install.sh
+git clone --depth 1 https://github.com/kkkariel888/ariel-broll-video.git /tmp/ariel-broll-video && bash /tmp/ariel-broll-video/install.sh
 ```
 它会：
 1. 检查并安装 git、python3、ffmpeg，检查 Chrome
@@ -26,7 +26,7 @@ git clone --depth 1 https://github.com/kkkariel888/ariel-skills.git /tmp/ariel-s
 
 ## 2. Claude 桌面 app / 网页版：在 app 里添加一次
 1. Customize → Plugins → Add marketplace（从 GitHub 仓库添加）
-2. 粘贴 `kkkariel888/ariel-skills`，**勾上 Sync automatically（自动同步）**
+2. 粘贴 `kkkariel888/ariel-broll-video`，**勾上 Sync automatically（自动同步）**
 3. 装 `broll-video-maker`
 
 能控制浏览器就直接帮用户打开页面填好；不能就把这 3 步发给用户。

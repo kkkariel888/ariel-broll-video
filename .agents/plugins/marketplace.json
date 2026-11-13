@@ -1,7 +1,7 @@
 {
-  "name": "ariel-skills",
+  "name": "ariel-broll-video",
   "interface": {
-    "displayName": "Ariel 的 AI skill 合集"
+    "displayName": "口播配动画 B-roll"
   },
   "plugins": [
     {

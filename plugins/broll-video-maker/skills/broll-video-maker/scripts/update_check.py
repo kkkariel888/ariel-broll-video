@@ -9,8 +9,8 @@
 """
 import json, os, shutil, subprocess, sys, urllib.request
 
-REPO = "kkkariel888/ariel-skills"
-MARKET = "ariel-skills"
+REPO = "kkkariel888/ariel-broll-video"
+MARKET = "ariel-broll-video"
 PLUGIN = "broll-video-maker"
 RAW = f"https://raw.githubusercontent.com/{REPO}/main/plugins/{PLUGIN}/.claude-plugin/plugin.json"
 HERE = os.path.dirname(os.path.abspath(__file__))
