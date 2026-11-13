@@ -69,13 +69,16 @@ def essence(md, n=420):
     m = re.search(r'## 1\.[^\n]*\n+(.+?)\n\n', t, re.S)
     return quote, (m.group(1).strip()[:n] if m else '')
 
+# 版权排除：这些风格要重画真实产品的界面 / 商标（Lemo 的 LICENSE 写明这些不在授权里），一律不用
+EXCLUDE = {'living-screencast': '要重画真实 App 界面和 Clawd 角色，商标不在 Lemo 授权里'}
+
 def catalog():
     if not is_lib(LIB):
         sys.exit('✗ 还没下载 Lemo 风格库：先跑 lemo.py ensure')
     rows = []
     for d in sorted((LIB / 'styles').iterdir()):
-        if d.name.startswith('_'):
-            continue                                   # 模板文件夹
+        if d.name.startswith('_') or d.name in EXCLUDE:
+            continue                                   # 模板文件夹 / 版权排除
         sj, md = d / 'style.json', d / 'STYLE.md'
         if not (sj.exists() and md.exists()):
             continue

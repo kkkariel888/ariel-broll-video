@@ -11,7 +11,7 @@
       "name": "broll-video-maker",
       "source": "./plugins/broll-video-maker",
       "description": "给口播视频配代码动画 B-roll：审错别字、仿 Word 标黄、从 Lemo-Opuscar 风格库 / 参考图 DNA / GitHub 风格链接挑风格（点一下就选），每个画面按风格现画、逐帧审稿、对齐语速出片。Claude 和 Codex 通用。",
-      "version": "1.1.1"
+      "version": "1.1.2"
     }
   ]
 }

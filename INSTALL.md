@@ -24,6 +24,9 @@ git clone --depth 1 https://github.com/kkkariel888/ariel-broll-video.git /tmp/ar
 - Mac 没有 Homebrew：装它要用户输一次开机密码
 - 连不上 GitHub：等网络好了再跑
 
+## 1b. Windows
+`install.sh` 只支持 Mac / Linux。Windows 上请一步步装：`winget install Git.Git`、`winget install Gyan.FFmpeg`，确认有 Chrome 或 Edge；再用 `python plugins/broll-video-maker/skills/broll-video-maker/scripts/lemo.py ensure` 下载风格库；最后按下面对应的软件添加插件市场。
+
 ## 2. Claude 桌面 app / 网页版：在 app 里添加一次
 1. Customize → Plugins → Add marketplace（从 GitHub 仓库添加）
 2. 粘贴 `kkkariel888/ariel-broll-video`，**勾上 Sync automatically（自动同步）**
