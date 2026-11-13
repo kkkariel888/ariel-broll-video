@@ -73,12 +73,26 @@ def verify(name, text=None):
             report['results'][f'{asp} 视频'] = {'ok': good, 'video': 'samples/' + os.path.basename(mp4), **info}; ok &= good
         except Exception as e:
             report['results'][f'{asp} 视频'] = {'ok': False, 'error': str(e)[:300]}; ok = False
+    shrink(sd, report)
     st['status'] = '上架' if ok else '待验证'
     st['verified'] = report
     write(d / 'style.json', st)
     bad = [k for k, v in report['results'].items() if not v.get('ok')]
     print('结论：', f"{st['name']} 跑通了 {len(report['results'])} 项，已上架" if ok else f"{st['name']} 没跑通：{'、'.join(bad)}，留在待验证区")
     return ok
+
+def shrink(sd, report):
+    """小样图转成 540 宽的 jpg，仓库和压缩包不至于太大。"""
+    if not shutil.which('ffmpeg'):
+        return
+    for png in sorted(pathlib.Path(sd).glob('*.png')):
+        jpg = png.with_suffix('.jpg')
+        r = subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', str(png), '-vf', 'scale=540:-2', '-q:v', '3', str(jpg)])
+        if r.returncode == 0:
+            png.unlink()
+    for v in report['results'].values():
+        if v.get('still', '').endswith('.png'):
+            v['still'] = v['still'][:-4] + '.jpg'
 
 def probe(p):
     try:

@@ -40,33 +40,6 @@
   "pace": "mid",
   "license": "自研（参考 Lemo-Opuscar 的「数据叙事」描述重写，代码为本仓库原创），随本仓库 MIT 发布",
   "source": "https://github.com/kkkariel888/ariel-skills",
-  "status": "上架",
-  "sample_text": "存银行年化 2%，买指数基金长期大约 8%，差了 4 倍",
-  "verified": {
-    "style": "data-story",
-    "text": "存银行年化 2%，买指数基金长期大约 8%，差了 4 倍",
-    "checked_at": "2026-11-13",
-    "results": {
-      "9:16": {
-        "ok": true,
-        "video": "samples/sample_9x16.mp4",
-        "still": "samples/sample_9x16.png",
-        "moves": true,
-        "w": 1080,
-        "h": 1920,
-        "fps": "30/1",
-        "dur": 3.0
-      },
-      "16:9": {
-        "ok": true,
-        "video": "samples/sample_16x9.mp4",
-        "still": "samples/sample_16x9.png",
-        "moves": true,
-        "w": 1920,
-        "h": 1080,
-        "fps": "30/1",
-        "dur": 3.0
-      }
-    }
-  }
+  "status": "停用",
+  "sample_text": "存银行年化 2%，买指数基金长期大约 8%，差了 4 倍"
 }

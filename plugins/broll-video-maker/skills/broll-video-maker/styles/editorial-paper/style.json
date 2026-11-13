@@ -77,23 +77,23 @@
     "results": {
       "9:16 principle": {
         "ok": true,
-        "still": "samples/principle_9x16.png"
+        "still": "samples/principle_9x16.jpg"
       },
       "9:16 numbers": {
         "ok": true,
-        "still": "samples/numbers_9x16.png"
+        "still": "samples/numbers_9x16.jpg"
       },
       "9:16 tool": {
         "ok": true,
-        "still": "samples/tool_9x16.png"
+        "still": "samples/tool_9x16.jpg"
       },
       "9:16 news": {
         "ok": true,
-        "still": "samples/news_9x16.png"
+        "still": "samples/news_9x16.jpg"
       },
       "9:16 conclusion": {
         "ok": true,
-        "still": "samples/conclusion_9x16.png"
+        "still": "samples/conclusion_9x16.jpg"
       },
       "9:16 视频": {
         "ok": true,
@@ -105,23 +105,23 @@
       },
       "16:9 principle": {
         "ok": true,
-        "still": "samples/principle_16x9.png"
+        "still": "samples/principle_16x9.jpg"
       },
       "16:9 numbers": {
         "ok": true,
-        "still": "samples/numbers_16x9.png"
+        "still": "samples/numbers_16x9.jpg"
       },
       "16:9 tool": {
         "ok": true,
-        "still": "samples/tool_16x9.png"
+        "still": "samples/tool_16x9.jpg"
       },
       "16:9 news": {
         "ok": true,
-        "still": "samples/news_16x9.png"
+        "still": "samples/news_16x9.jpg"
       },
       "16:9 conclusion": {
         "ok": true,
-        "still": "samples/conclusion_16x9.png"
+        "still": "samples/conclusion_16x9.jpg"
       },
       "16:9 视频": {
         "ok": true,

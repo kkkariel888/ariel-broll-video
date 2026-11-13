@@ -41,33 +41,6 @@
   "pace": "mid",
   "license": "原创（作者 kkkariel888），随本仓库 MIT 发布",
   "source": "https://github.com/kkkariel888/ariel-skills",
-  "status": "上架",
-  "sample_text": "复利就是利滚利，本金生利息，利息再生利息",
-  "verified": {
-    "style": "line-minimal",
-    "text": "复利就是利滚利，本金生利息，利息再生利息",
-    "checked_at": "2026-11-13",
-    "results": {
-      "9:16": {
-        "ok": true,
-        "video": "samples/sample_9x16.mp4",
-        "still": "samples/sample_9x16.png",
-        "moves": true,
-        "w": 1080,
-        "h": 1920,
-        "fps": "30/1",
-        "dur": 3.0
-      },
-      "16:9": {
-        "ok": true,
-        "video": "samples/sample_16x9.mp4",
-        "still": "samples/sample_16x9.png",
-        "moves": true,
-        "w": 1920,
-        "h": 1080,
-        "fps": "30/1",
-        "dur": 3.0
-      }
-    }
-  }
+  "status": "停用",
+  "sample_text": "复利就是利滚利，本金生利息，利息再生利息"
 }
