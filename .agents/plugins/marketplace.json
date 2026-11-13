@@ -1,0 +1,20 @@
+{
+  "name": "ariel-skills",
+  "interface": {
+    "displayName": "Ariel 的 AI skill 合集"
+  },
+  "plugins": [
+    {
+      "name": "broll-video-maker",
+      "source": {
+        "source": "local",
+        "path": "./plugins/broll-video-maker"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

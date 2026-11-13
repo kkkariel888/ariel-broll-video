@@ -91,12 +91,23 @@ PY
   fi
   if claude plugin list 2>/dev/null | grep -q "$PLUGIN@$MARKET"; then ok+=("Claude Code：已装 $PLUGIN，自动更新已打开"); else todo+=("Claude Code 里没装上 $PLUGIN"); fi
 fi
-if have codex; then
+# Codex：命令行版或 Codex 桌面 app 自带的命令行（两者共用 ~/.codex，装一次两边都有）
+CODEX=""
+have codex && CODEX="codex"
+[ -z "$CODEX" ] && [ -x "/Applications/Codex.app/Contents/Resources/codex" ] && CODEX="/Applications/Codex.app/Contents/Resources/codex"
+if [ -n "$CODEX" ]; then
   if [ $CHECK_ONLY = 0 ]; then
-    codex plugin marketplace add "$REPO" >/dev/null 2>&1
-    codex plugin add "$PLUGIN@$MARKET" >/dev/null 2>&1
+    "$CODEX" plugin marketplace add "$REPO" >/dev/null 2>&1
+    "$CODEX" plugin add "$PLUGIN@$MARKET" >/dev/null 2>&1
   fi
-  ok+=("Codex：已添加 $MARKET（每次用 skill 时会自己查新版本）")
+  if "$CODEX" plugin list 2>/dev/null | grep -q "$PLUGIN"; then
+    ok+=("Codex：已装 $PLUGIN（Codex 每次启动会自己拉最新版，不用设置）")
+  else
+    todo+=("Codex 里没装上 $PLUGIN：在 Codex 里打开 Plugins → Add marketplace → 粘贴 $REPO → 装 $PLUGIN")
+  fi
+fi
+if [ -z "$CODEX" ] && ! have claude; then
+  todo+=("没找到 Claude Code 或 Codex 的命令行：如果你用的是 Codex 桌面 app，在 Plugins → Add marketplace 粘贴 $REPO 再装 $PLUGIN")
 fi
 todo+=("如果你用的是 Claude 桌面 app / 网页版：Customize → Plugins → Add marketplace → 粘贴 $REPO，勾上「Sync automatically」→ 装 $PLUGIN（这一步只能在 app 里点，AI 可以帮你打开页面）")
 

@@ -1,7 +1,11 @@
 {
   "name": "ariel-skills",
-  "owner": { "name": "kkkariel888" },
-  "metadata": { "description": "Ariel 的开源 AI skill 合集：订阅一次，更新自动到你手里。" },
+  "owner": {
+    "name": "kkkariel888"
+  },
+  "metadata": {
+    "description": "Ariel 的开源 AI skill 合集：订阅一次，更新自动到你手里。"
+  },
   "plugins": [
     {
       "name": "broll-video-maker",
