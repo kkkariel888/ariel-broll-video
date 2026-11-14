@@ -144,7 +144,7 @@ codex plugin marketplace add kkkariel888/ariel-broll-video
 codex plugin add broll-video-maker@ariel-broll-video
 ```
 
-装完不用另外打开自动更新：skill 每次开工会自己检查新版本并自动更新。
+装完不用另外打开自动更新：skill 每次开工会先查 GitHub 上有没有新版，有就这次直接用新版。
 
 </details>
 
@@ -237,7 +237,7 @@ codex plugin add broll-video-maker@ariel-broll-video
 | Claude Code | 安装时已打开自动更新，下次开新对话就是新版 |
 | Codex 命令行 / 桌面 app | 每次启动自动拉最新版 |
 
-另外，skill 每次开工前会自己查一下有没有新版本，算第二道保险。
+另外，skill 每次开工前会自己查一下 GitHub 上有没有新版本，有就把新版下载下来、这一次就用新版（Claude Code、Claude 桌面 app、Codex 都一样），算第二道保险。
 
 <p align="right">(<a href="#readme-top">回到顶部</a>)</p>
 

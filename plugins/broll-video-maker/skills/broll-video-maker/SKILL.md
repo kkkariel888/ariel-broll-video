@@ -19,7 +19,7 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 
 ## 第 0 步：开工前（每次都跑，很快）
 先看一眼用户的文件夹：至少要有 1 个口播视频（`.srt` 和逐字稿 `.docx/.txt` 都是可选的）。没有视频或有好几个，按文末「出错了怎么办」处理，**先别下载风格库**。
-0. `python3 <本skill>/scripts/update_check.py`：查有没有新版本，有就自己更新（下次对话生效）。只在最后一行是 `STATUS=updated` 或 `outdated` 时跟用户说一句，其他情况不吭声。
+0. `python3 <本skill>/scripts/update_check.py`：开工查新版本（几秒）。最后一行是 `STATUS=live` → 跟用户说一句「用上了新版 X」，然后读它打印的 `LIVE_SKILL_DIR` 文件夹里的 `SKILL.md`，**这次就按新版做**（从新版第 0 步的下一条接着做，之后 `<本skill>` 都指那个文件夹）；是 `updated` 或 `outdated` 就说一句；其他情况不吭声。
 1. `python3 <本skill>/scripts/lemo.py ensure`：第一次会把 Lemo-Opuscar 下载到 `~/lemo-opuscar`（约 30MB），以后只更新。
    **必须下载成功才能往下走。** 失败就把它打印的原因告诉用户（多半是网络连不上 GitHub），等用户说「重试」。在 Cowork / Codex 沙盒里就直接说「要放开 github.com 和 codeload.github.com」，Codex 要用户批准联网就先说明为什么要联网。没有保底风格，不要自己凑。
 2. 检查 `git`、`ffmpeg`、Chrome（或 Edge / Chromium）在不在。缺了就**直接帮用户装**（Mac：`brew install ffmpeg git`；Linux / Cowork / Codex 沙盒：`apt-get install -y ffmpeg git chromium`，装不了就告诉用户缺什么、哪一步会用到它；能跑仓库根目录的 `install.sh` 就跑它），只有要用户本人点的（Mac 弹窗、输开机密码）才叫用户，不要假装做完。
