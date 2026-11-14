@@ -155,7 +155,7 @@ codex plugin add broll-video-maker@ariel-broll-video
 1. 把这期的**口播视频**放进一个文件夹。手机剪映直接导出视频就行，**不用导字幕**。
    - 有逐字稿（Word / txt）也放进去，字幕会更准，错别字基本没有
    - 用电脑剪映、已经导出了字幕（.srt）的，也可以放进去，会直接用它
-   - 没有字幕时 AI 会在你电脑上自己听写，不上传。第一次要下一个约 550MB 的听写模型，以后不用再下
+   - 没有字幕时 AI 会自己听写，不上传，只用 CPU（Claude Code、Cowork、Codex 都行）。第一次要装约 180MB 的听写工具（两三分钟），以后 7 分钟的视频约 20 秒听完
 2. 对 AI 说一句：
 
    ```
@@ -174,6 +174,7 @@ codex plugin add broll-video-maker@ariel-broll-video
 ```
 字幕_修正.srt        改过错别字的字幕，能直接导回剪映
 字幕_自动识别.srt    没给字幕时，AI 自动听写出来的字幕
+逐字时间.json        每个字是第几秒说的，B-roll 卡点用
 标黄逐字稿.docx      带黄色高亮的逐字稿
 风格样图/            选风格时的样图
 已确认逐帧图/        你审过的每一张图
@@ -315,6 +316,7 @@ skill 本身能用。一键安装脚本目前只支持 Mac 和 Linux，Windows �
 
 - 风格库：[Lemo-Opuscar](https://github.com/lemomo-ai/lemo-opuscar) by Lemomo (LemoLab)。风格说明采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)，并附加授权「读它、照它、改它来做你自己的片子（含商用片）」；代码采用 MIT。本仓库没有收录、也没有修改它的任何文件，使用时从官方仓库下载到你自己的电脑
 - 思源黑体 / 思源宋体、霞鹜漫黑等开源字体（SIL OFL 1.1）
+- 自动听写：[sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)（Apache-2.0）+ [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) 模型（FunASR 模型许可）+ [Silero VAD](https://github.com/snakers4/silero-vad)（MIT）。都是第一次用时下载到你自己的电脑，本仓库不带它们的文件
 - 本 README 的结构参考了 [Best-README-Template](https://github.com/othneildrew/Best-README-Template)、[standard-readme](https://github.com/RichardLitt/standard-readme) 和 [Art of README](https://github.com/hackergrrl/art-of-readme)
 
 <p align="right">(<a href="#readme-top">回到顶部</a>)</p>

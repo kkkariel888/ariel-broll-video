@@ -1,6 +1,32 @@
 [
-  {"id": 1, "prompt": "~/Desktop/第12期 这个文件夹里有剪映导出的字幕和口播视频，帮我配 B-roll", "expected": "ffprobe 判画幅不问用户；用小表列出错别字修正（提示次/作/沾贴）；建议 8-15 处标黄并启动标黄页面；后台同时出 3 个风格候选样图；不在用户确认前渲染视频"},
-  {"id": 2, "prompt": "按这张参考图的感觉做，文件夹在 ~/Movies/ep7，参考图是里面的 ref.png", "expected": "走风格 DNA 流程：dna.py colors 量色、写风格草稿、出 --compare 对比图，提示「太像就说再离远一点」；不抄图"},
-  {"id": 3, "prompt": "帮我配 B-roll，文件夹是 ~/Desktop/第13期（里面只有口播视频，没有 .srt）", "expected": "发现缺 SRT，告诉用户缺什么、怎么从剪映导出，然后停下等用户；不自己编字幕往下做"},
-  {"id": 4, "prompt": "用这个 GitHub 风格 https://github.com/alchaincyf/huashu-art-motion 做，文件夹是 ~/Desktop/第14期", "expected": "先 dna.py license 查许可证（MIT）；识别出这是一个完整的动画 skill 而不是单个风格说明，从中提炼配色/字体/动效来画样图；不把它的内容存进本 skill"}
+  {
+    "id": 1,
+    "prompt": "~/Desktop/第12期 这个文件夹里有剪映导出的字幕和口播视频，帮我配 B-roll",
+    "expected": "ffprobe 判画幅不问用户；用小表列出错别字修正（提示次/作/沾贴）；建议 8-15 处标黄并启动标黄页面；后台同时出 3 个风格候选样图；不在用户确认前渲染视频"
+  },
+  {
+    "id": 2,
+    "prompt": "按这张参考图的感觉做，文件夹在 ~/Movies/ep7，参考图是里面的 ref.png",
+    "expected": "走风格 DNA 流程：dna.py colors 量色、写风格草稿、出 --compare 对比图，提示「太像就说再离远一点」；不抄图"
+  },
+  {
+    "id": 3,
+    "prompt": "帮我配 B-roll，文件夹是 ~/Desktop/第13期（里面只有手机剪映导出的口播视频和一份逐字稿.docx，没有 .srt）",
+    "expected": "不叫用户去电脑剪映导 SRT、不按字数估时间；马上跑 transcribe.py --script 逐字稿，第一次先说一句要装听写工具；用 字幕_自动识别.srt 往下走审错别字和标黄；STATUS=script_mismatch 时问一句"
+  },
+  {
+    "id": 4,
+    "prompt": "用这个 GitHub 风格 https://github.com/alchaincyf/huashu-art-motion 做，文件夹是 ~/Desktop/第14期",
+    "expected": "先 dna.py license 查许可证（MIT）；识别出这是一个完整的动画 skill 而不是单个风格说明，从中提炼配色/字体/动效来画样图；不把它的内容存进本 skill"
+  },
+  {
+    "id": 5,
+    "prompt": "（环境：Cowork。Linux 隔离环境，没有 brew、没有显卡，只能访问白名单网站，只能读写用户选的文件夹 /mnt/user/第15期；用户自己的浏览器打不开沙盒里的 127.0.0.1）帮我配 B-roll，文件夹里有手机剪映导出的口播视频和逐字稿.docx",
+    "expected": "跑 transcribe.py --script；下载被拦时告诉用户具体放开哪几个网址再说重试，不给看不懂的选项、不改用按字数估时间；标黄页面不假设有侧边浏览器，用 Cowork 里能用的方式让用户确认；成片只放用户文件夹，不写桌面"
+  },
+  {
+    "id": 6,
+    "prompt": "（环境：Codex CLI。默认沙盒，只能写当前工作文件夹，联网要用户批准，没有图形界面）文件夹 ~/work/ep16 有剪映导出的 SRT 和口播视频，帮我配 B-roll，最后直接嵌进原视频",
+    "expected": "有 SRT 就不听写；联网（下风格库、字体）前说明要批准；标黄页面把地址发给用户自己打开；B 方案按 1080P 60 帧、音轨直接复制；成片放工作文件夹，写不了桌面就不写也不报错"
+  }
 ]

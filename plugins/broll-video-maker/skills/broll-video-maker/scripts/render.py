@@ -35,6 +35,8 @@ def find_chrome():
     for n in ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'chrome', 'msedge']:
         w = shutil.which(n)
         if w: cands.append(w)
+    import glob   # Linux 沙盒里常见：Playwright 自带的 Chromium
+    cands += sorted(glob.glob(os.path.expanduser('~/.cache/ms-playwright/chromium*/chrome-linux*/chrome')), reverse=True)
     for c in cands:
         if c and os.path.exists(c):
             return c
