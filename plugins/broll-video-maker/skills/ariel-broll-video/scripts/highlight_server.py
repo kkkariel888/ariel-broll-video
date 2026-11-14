@@ -368,7 +368,9 @@ def main():
         page = f.read().replace("__DATA__", json.dumps({"title": title, "blocks": blocks}, ensure_ascii=False))
     lock = threading.Lock()
     proj = Project(work, folder)
-    roots = {"files/": work, "out/": folder, "my/": MINE, "@film/": work}
+    BH = HOME
+    roots = {"files/": work, "out/": folder, "my/": MINE, "@film/": work,
+             "@fonts/": os.path.join(BH, "fonts"), "@kits/": os.path.join(BH, "kits")}
 
     class H(BaseHTTPRequestHandler):
         def log_message(self, *args):

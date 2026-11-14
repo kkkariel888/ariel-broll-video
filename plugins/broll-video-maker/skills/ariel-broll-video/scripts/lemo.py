@@ -6,7 +6,8 @@ Lemo-Opuscar（github.com/lemomo-ai/lemo-opuscar，作者 Lemomo / LemoLab）的
 只在用户自己的电脑上现下载、现读，用来给用户这期视频做画面。
 
   lemo.py ensure                 下载或更新到 ~/lemo-opuscar（和 Lemo 自己的 skill 用同一个位置），最后一行打印 LIB=<路径>
-  lemo.py catalog [--out f.json] 列出能用的风格（去掉需要 AI 生图的），给 Agent 挑
+  lemo.py catalog               列出能用的风格（去掉需要 AI 生图的），一行一个，给 Agent 挑（约 20KB）
+  lemo.py catalog --out f.json  完整版（含每个风格的要点），一般不用
   lemo.py style <slug>           打印这个风格 STYLE.md 的路径
   lemo.py demo <slug>            补下载这个风格的演示片源码（只用来参考写法）
   lemo.py mine                   列出用户自己的风格（~/lemo-my-styles/）
@@ -136,8 +137,8 @@ def main():
         if '--out' in a:
             pathlib.Path(a[a.index('--out') + 1]).write_text(out, encoding='utf-8'); print(f'{len(rows)} 个风格 → {a[a.index("--out") + 1]}')
         else:
-            for r in rows:
-                print(f"{r['slug']:<24}{r['cn']:<10}{r['category']:<8}{r['line']}")
+            for r in rows:   # 挑风格用的精简版：一行一个，够挑；挑完再读那 3 个的 STYLE.md
+                print(f"{r['slug']}｜{r['cn']}｜{r['category']}｜适合：{'、'.join((r.get('uses') or [])[:3])}｜{(r.get('summary') or '')[:90]}")
     elif cmd == 'style':
         print(style_md(a[1]))
     elif cmd == 'demo':

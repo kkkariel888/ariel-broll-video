@@ -13,6 +13,7 @@
   render.py B3.html --size 1080x1920 --keyframes --label "B3 · 00:41：原话" --out 逐帧图/B3     出 开场/最满/定格 3 张
   render.py B3.html --size 1080x1920 --at 1.2 2.4 --out 逐帧图/B3                                指定时间点出图
   render.py B3.html --size 1080x1920 --out 成片/B3.mp4                                            出视频：默认 1080P 60 帧，不管原片多糊（要 4K 加 --scale 2，慢约 2.5 倍）
+  render.py 样图.html --at 0 --out 风格样图/a_1.png                                              静态定格图（样图）：页面不用写 render(t)，画好设 window.READY=true
   render.py --compare 参考图.jpg 样图.png --out 对比.png                                            参考图和样图并排（检查有没有太像）
 可选：--keytimes 0.4,1.6,2.9（关键帧时间点；不填就读页面的 window.KEYTIMES，再不行取 25% / 60% / 结尾）
 
@@ -26,6 +27,9 @@
 import argparse, base64, http.server, json, os, pathlib, platform, re, shutil, socket, struct, subprocess, sys, tempfile, threading, time, urllib.request
 
 LIB = pathlib.Path(os.environ.get('LEMO_OPUSCAR_HOME', pathlib.Path.home() / 'lemo-opuscar'))
+BROLL_HOME = pathlib.Path(os.environ.get('BROLL_HOME', pathlib.Path.home() / '.broll-video-maker'))
+# 页面里的绝对路径：/@fonts/ = 下载好的字体（fonts.py get），/@kits/ = 每个风格存下来的画图工具，/@film/ = 画面页所在文件夹，其余 = Lemo 风格库
+SHARED = {'/@fonts/': BROLL_HOME / 'fonts', '/@kits/': BROLL_HOME / 'kits'}
 LABEL_H = 150
 
 def find_chrome():
@@ -56,7 +60,10 @@ class _H(http.server.SimpleHTTPRequestHandler):
     def translate_path(self, path):
         from urllib.parse import unquote
         path = unquote(path.split('?', 1)[0].split('#', 1)[0])
-        base, rest = (self.film, path[len('/@film/'):]) if path.startswith('/@film/') else (str(LIB), path.lstrip('/'))
+        pre = next((p for p in SHARED if path.startswith(p)), None)
+        if pre: base, rest = str(SHARED[pre]), path[len(pre):]
+        elif path.startswith('/@film/'): base, rest = self.film, path[len('/@film/'):]
+        else: base, rest = str(LIB), path.lstrip('/')
         full = os.path.normpath(os.path.join(base, rest))
         return full if full.startswith(os.path.normpath(base)) else os.path.join(base, '__denied__')
     def end_headers(self):
@@ -239,9 +246,11 @@ def render(page, size='1080x1920', out=None, keyframes=False, at=None, keytimes=
         cdp.call('Runtime.enable'); cdp.call('Page.enable'); cdp.size(w, h)
         cdp.goto(url)
         fn = 'render' if cdp.js('typeof window.render==="function"') else 'seek' if cdp.js('typeof window.seek==="function"') else None
-        if not fn: raise RuntimeError('页面没有 window.render(t)')
+        if not fn and not (at or keyframes):
+            raise RuntimeError('页面没有 window.render(t)，出不了视频（静态的定格图页面只能出图：加 --at）')
         dur = float(cdp.js('window.DUR') or 3.0)
         def draw(t):
+            if not fn: return   # 静态定格图（样图）：页面画好就是那一张
             cdp.js(f'(async()=>{{const r=window.{fn}({max(0.0, min(dur, t))}); if(r&&r.then) await r; return 1}})()', wait=True)
             if cdp.errors: raise RuntimeError('页面出错：' + '；'.join(map(str, cdp.errors))[:800])
         def check(t, png=None):

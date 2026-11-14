@@ -8,6 +8,7 @@
   Claude Code / Claude 桌面 app：后台运行（run_in_background），AI 照常干活，用户一点，AI 自动被叫醒
   Codex：直接运行，它会等到用户点了才返回
 已经看过的记在 事件.seen，不会重复叫。
+  --file 模式.json   只等 <工作文件夹> 里出现这个文件（不读、不标记事件，给子任务用：不会抢走主 AI 的门铃）
 最后一行：STATUS=event（下面是新的事件，每行一个 JSON）/ STATUS=timeout（等太久，没人点）
 事件种类：mode（文字/动画）confirm（确认标黄）pick（选了风格）more（再来 3 个风格）save_style（存进我的风格）
           review（某个画面通过 / 要改）approve_all（全部通过，出片）
@@ -18,8 +19,15 @@ import argparse, json, os, sys, time
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("work"); ap.add_argument("--for", dest="kinds", default="")
-    ap.add_argument("--timeout", type=float, default=1800)
+    ap.add_argument("--timeout", type=float, default=1800); ap.add_argument("--file")
     a = ap.parse_args()
+    if a.file:
+        t0, fp = time.time(), os.path.join(a.work, a.file)
+        while not os.path.exists(fp):
+            if time.time() - t0 > a.timeout:
+                print("STATUS=timeout"); return
+            time.sleep(0.4)
+        print(open(fp, encoding="utf-8").read().strip()); print("STATUS=event"); return
     ev_path = os.path.join(a.work, "事件.jsonl")
     seen_path = os.path.join(a.work, "事件.seen")
     kinds = {k.strip() for k in a.kinds.split(",") if k.strip()}

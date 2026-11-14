@@ -5,6 +5,8 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 
 # 口播配动画 B-roll（Claude Code / Claude 桌面 app / Cowork / Codex 通用）
 
+**第一件事**：用户一开口，先回一句「收到，开工：……大概多久」，再去读文件、跑命令（10 秒内必须有这句）。
+
 **说话方式**：少说话，直接干活。不寒暄、不解释流程。10 秒内回第一句，之后每个阶段一句进度。能让用户点的就不让用户打字；真要问，一次只问一个问题。用中文、大白话。
 
 本 skill 文件夹里有：
@@ -14,7 +16,8 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 - `scripts/render.py`：把画面页渲染成关键帧图或视频（Python 自带库 + 本机 Chrome + ffmpeg；视频默认 1080P 60 帧；`--batch` 一批并行出、自动质检）
 - `scripts/transcribe.py`：没有 SRT 时在本机把口播听写成字幕，有逐字稿就用逐字稿纠字（SenseVoice，只用 CPU，不上传；Claude Code、Cowork、Codex 都能跑）
 - `scripts/dna.py`：参考图量主色、量剪辑节奏、查 GitHub 许可证、存进「我的风格」
-- `scripts/fonts.py`：下载风格说明里点名的开源字体
+- `scripts/fonts.py`：下载风格说明里点名的开源字体（下一次永久用，一次下好几个；画面页用 `/@fonts/…` 地址直接读，不复制）
+- `scripts/kit.py`：每个风格的「画图工具」存起来重复用（第一次用这个风格写一次，以后样图、正式画面都直接用）
 - `assets/highlighter.html`：页面本体（① 标黄 ② 选风格 ③ 审稿 ④ 成片）
 - `references/style-dna.md`：参考图提炼风格的规矩；`references/open-source-review.md`：开源项目核验记录
 
@@ -52,7 +55,7 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 2. 后台启动：`python3 <本skill>/scripts/highlight_server.py <工作>/字幕_修正.srt --suggest <工作>/建议标黄.json --out <工作>`（成片目录自动是 `<工作>` 的上一层，也就是用户的文件夹）。以它打印的地址为准。
 3. 在侧边浏览器打开地址（见文末「在哪打开」），对话里只说一句：
    > 右边先点一下「文字讲解多一点 / 纯动画多一点」，我马上开始画风格样图；你同时改标黄，改好点「确认标黄」。
-4. 后台跑门铃 `wait_page.py <工作> --for mode,confirm`。**用户选文字多 / 动画多之前不画任何图**（画出来的字多字少会不对）；等的这几秒先做第 3 步的「挑风格、挑 3 句」。
+4. 后台跑门铃 `wait_page.py <工作> --for mode,confirm`，**马上接着做第 3 步**（挑风格、准备字体和画图工具、派子任务）。用户选文字多 / 动画多之前，子任务只做准备、**不画样图**（字多字少会不对）。
 
 ## 第 3 步：3 个风格 × 同 3 句话 = 9 张样图（2 分钟内，并行画）
 
@@ -60,7 +63,7 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 1. **用户给了参考图** → 按 `references/style-dna.md` 提炼风格 DNA，写成新风格放 `<工作>/风格草稿/<slug>/`，排第 1；再从 Lemo 挑 2 个长相差别大的。
 2. **用户给了 GitHub 风格链接** → `python3 scripts/dna.py license <链接>` 先查许可证：「可以用」/「分块看」读它的风格说明，只在这台电脑上给这期视频用，不存进本 skill；「有限制」告诉用户限制；「不能用」直接说，换别的来源。仓库是一整个风格库（很多风格卡、没有单个 `STYLE.md`）→ 挑 3 张最合适的卡当 3 个候选，`style_md` 指向那张卡；名字起中性的（比如「白板手绘」），不用品牌、作品、角色名。
 3. **用户说「用上次那个」** → 读 `~/.broll-video-maker/last.json`，直接当选定风格，跳到第 5 步。
-4. **都没给** → `python3 scripts/lemo.py catalog --out <工作>/风格目录.json`（已去掉要 AI 生图的风格；用户存过的「我的风格」也在里面，`source` 是 `mine`）。读完整份字幕，判断这期在讲什么、语速、气质，挑 **3 个**：第 1 名最稳，第 2、3 名和它长相差别要大。
+4. **都没给** → `python3 scripts/lemo.py catalog`（一行一个风格，约 20KB；已去掉要 AI 生图的风格；用户存过的「我的风格」也在里面）。**不要用 `--out` 读完整版**（100KB，慢）。读完整份字幕，判断这期在讲什么、语速、气质，挑 **3 个**：第 1 名最稳，第 2、3 名和它长相差别要大。
 
 ### 挑 3 句、先占位
 - 从标黄（用户还在改就用建议标黄）里挑 **3 句最有代表性、类型不同的原话**：一句带数字、一句讲原理 / 概念、一句讲结论或动作。**3 个风格画同样这 3 句**，用户才能横着比。
@@ -73,15 +76,20 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
   ```
   `source` 是 lemo / mine / dna / github。
 
-### 并行画（收到 `mode` 事件后马上开始）
-- **每个风格派一个子任务（subagent）同时画**（Claude Code / 桌面 app 用 Agent 工具，3 个一起派；Codex 能开子任务就开，不能就自己按风格顺序画）。给每个子任务：这个风格的 `STYLE.md` 路径、3 句原话、`mode`、画布尺寸、要写的 3 个文件。要求：
-  - 先通读 `STYLE.md`，**3 张共用同一套长相**（同一个配色、字体、材质、镜头语言），内容跟着每句话的意思走，不是套模板；`mode` 是 anim 就少放字。
-  - 画面页写在 `风格样图/页面/<slug>/1.html`…`3.html`（写法见「画面页怎么写」）。
-  - 写一个 `风格样图/页面/<slug>/任务.json`，3 个都用 `{"page":"1.html","at":[最满那一秒],"out":"草稿_1.png","size":"…"}`，跑 `render.py --batch <那个任务.json> --jobs 3`。
-  - 输出里有「质检：…」（字出界、字被裁、字太小、图糊、空白）就改页面重出，最多 2 次；通过的把 `草稿_k.png` 移到 `风格样图/<slug>_k.png`（这一下页面上就出现了）。
+### 准备（挑好 3 个风格马上做，不等用户选模式）
+1. **字体一次下齐**（后台）：把 3 个风格 `STYLE.md` 里点名的字体名找出来，加上中文字体（没点名就 `Noto Sans SC`），`python3 scripts/fonts.py get "字体1" "字体2" …`。下过的秒过；第一次要下的先说一句「第一次用这几个字体，要下载一两分钟」。**样图就用风格指定的正式字体，不拿系统字体凑。**
+2. **看画图工具有没有**：`python3 scripts/kit.py status <slug1> <slug2> <slug3> --style-md <md1> <md2> <md3>`。`ready` = 这个风格以前写过工具，直接用；`missing` / `stale` = 这次要写（第一次用、或者风格说明更新了）。
+
+### 并行画（马上派子任务，模式选好就动笔）
+- **每个风格派一个子任务（subagent）同时做**（Claude Code / 桌面 app 用 Agent 工具，3 个一起派，用平时干活的模型，不降级；Codex 能开子任务就开，不能就自己按风格顺序做）。给每个子任务：slug、`STYLE.md` 路径、`kit.py status` 的结果、字体地址（`fonts.py get` 打印的 `/@fonts/…`）、3 句原话、画布尺寸、`<工作>` 路径、要写的文件。要求：
+  1. **画图工具**：`ready` → 只读 `KIT.md`（20 行要点）和 `kit.js`，不再读整本 `STYLE.md`。`missing` / `stale` → 读 `STYLE.md`，写 `kit.js` + `KIT.md`（要求见「画面页怎么写 · 画图工具」），存：`python3 scripts/kit.py save <slug> <文件夹> --style-md <STYLE.md>`。这一步不用等用户。
+  2. **等模式**：`python3 scripts/wait_page.py <工作> --file 模式.json`（只等文件出现，不碰门铃事件）。拿到 `mode`：anim 少放字、text 可以多放字。
+  3. **画 3 张静态定格图**：`风格样图/页面/<slug>/1.html`…`3.html`，`import * as K from '/@kits/<slug>/kit.js'`，3 张共用同一套长相，内容跟着每句话的意思专门设计（不是套模板）。样图只要一张定格：**不写 `render(t)` 动画**，画好设 `window.READY=true`。
+  4. 写 `风格样图/页面/<slug>/任务.json`：3 个都是 `{"page":"1.html","at":[0],"out":"草稿_1.png","size":"…"}`，跑 `render.py --batch <那个任务.json> --jobs 3`。有「质检：…」就改页面重出（最多 2 次）；通过的把 `草稿_k.png` 移到 `风格样图/<slug>_k.png`（这一下页面上就出现了）。
+  5. **不下载东西、不看演示片源码**（字体主任务已经下好；演示片留给第 5 步需要时再看）。
 - 子任务都回来后，把 `风格排名.json` 的 `drawing` 改成 `false`。对话里只说一句「9 张样图在右边，看完点『就这个』」。**不要在对话里一张张发图**（页面上一屏看完，点开放大）。
 - 后台跑门铃 `wait_page.py <工作> --for pick,more`：
-  - `more` → 再挑 3 个和已有的都不一样的风格，**追加**进 `candidates`（之前的都留着），同样并行画同 3 句。
+  - `more` → 再挑 3 个和已有的都不一样的风格，**追加**进 `candidates`（之前的都留着），同样准备 + 并行画同 3 句。
   - `pick` → 第 4 步。
 
 ## 第 4 步：读结果
@@ -90,8 +98,8 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 - 用户如果在对话里粘贴了「标黄结果（共 N 处）：…」，就用粘贴的内容。
 
 ## 第 5 步：画每个画面 + 页面上审稿（并行）
-1. 先通读选定风格的 `STYLE.md`（需要的话 `lemo.py demo <slug>` 看演示片写法，不照搬故事和画面）。把多个画面共用的零件（配色变量、纸张、笔触、面板、字体加载）写成 `逐帧代码/共用.js`。
-2. **分给 3 个子任务并行写**（每个负责几处标黄）：每处一个 `逐帧代码/B3.html`，内容按这句话设计、长相照 `STYLE.md`、引用 `共用.js`；时长 = `endTime - startTime`；关键词在说到的那一刻出现（查 `逐字时间.json`）。
+1. 选定风格的画图工具样图阶段已经写好（`/@kits/<slug>/kit.js`），**直接用，不再从零写**（「用上次那个」跳过了样图：先 `kit.py status`，没有就照第 3 步的要求写一份存起来；字体照样先 `fonts.py get`）。再读一遍 `STYLE.md` 里讲动效 / 节奏 / 转场的那几节（样图是静态的，动起来的规矩这时才用；需要的话 `lemo.py demo <slug>` 看演示片写法，不照搬故事和画面）。这一期额外要的共用零件，加在 `逐帧代码/共用.js` 里（从 kit 引入，不复制 kit 的内容）。
+2. **分给 3 个子任务并行写**（每个负责几处标黄）：每处一个 `逐帧代码/B3.html`，内容按这句话设计、长相照 `STYLE.md`、引用 kit 和 `共用.js`；时长 = `endTime - startTime`；关键词在说到的那一刻出现（查 `逐字时间.json`）。
 3. 全部写完一次出关键帧：写 `逐帧代码/任务.json`（每处 `{"page":"B3.html","keyframes":true,"out":"../逐帧图/B3","size":"…"}`），`render.py --batch 逐帧代码/任务.json --jobs 3`。有「质检：…」先自己改好重出（同一处最多 3 次）。
 4. 写 `<工作>/逐帧审稿.json`，页面「③ 审稿」就出现一张表（编号 | 原话 | 时间 | 3 张关键帧 | 会动的动画 | 通过 / 要改）：
    ```json
@@ -143,7 +151,7 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 | `ffprobe` 读不出 | 告诉用户视频可能坏了或格式不支持，请重新从剪映导出。 |
 | 标黄小助手起不来 | 端口被占时它会自动换端口，以它打印的地址为准。还起不来就把报错告诉用户，改用对话里粘贴标黄（第 4 步最后一条）。 |
 | 侧边浏览器打不开或被别的页面占着 | 把地址发给用户自己点开。 |
-| 电脑上没有中文字体 | `python3 scripts/fonts.py copy "Noto Sans SC" 逐帧代码/`（约 17MB）。下载失败就告诉用户原因，等用户说「重试」；不要随便换成别的字体。 |
+| 电脑上没有中文字体 | `python3 scripts/fonts.py get "Noto Sans SC"`（约 17MB，下一次永久用）。下载失败就告诉用户原因，等用户说「重试」；**不要换成系统字体或别的字体凑**，风格就是靠字体撑的。 |
 | `render.py` 找不到 Chrome | Mac / Windows：请用户装 Chrome，或者设好环境变量 `CHROME` 指向浏览器。Linux / Cowork / Codex 沙盒：`apt-get install -y chromium`；装不上就告诉用户「出图要浏览器，这一步请到 Claude Code 或桌面 app 的 Code 页面里做」，前面的标黄、选风格结果都在文件夹里，接着做就行。 |
 | 渲染出来空白、字出框、元素叠在一起（`render.py` 打印「质检：…」） | 先自己改页面重出，同一张最多改 3 次，再给用户看。还不行，把这张图和问题告诉用户。 |
 | `dna.py license` 失败，或 3 分钟没结果 | 告诉用户，让用户点「重试」或「改用 Lemo 风格」。 |
@@ -152,11 +160,16 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 
 ## 画面页怎么写
 - 一个 HTML 文件，满足 Lemo 的页面约定：`window.DUR = 秒数`；`window.render = t => {…}`（同一个 t 永远画出同一张，不用定时器、不用 CSS 过渡）；字体图片加载完设 `window.READY = true`；可选 `window.KEYTIMES = [开场, 最满, 定格]`。
+- **风格样图例外**：只出一张定格，不写 `render(t)`，画好设 `window.READY = true`，用 `render.py --at 0` 出图。
 - 画布尺寸只看画幅，不看原片分辨率：竖屏 1080×1920、横屏 1920×1080、1:1 1080×1080（原片 480P 也一样）。出视频就按这个尺寸（1080P）。Canvas 2D 或 DOM 都行；**用 Canvas 必须按 `devicePixelRatio` 建画布**（`c.width = W*devicePixelRatio; ctx.scale(devicePixelRatio, devicePixelRatio)`，CSS 宽高仍是 W×H），否则加 `--scale 2` 出 4K 时会糊。可以 `import` Lemo 的工具：`/core/lib.js`（缓动、弹簧、噪声等，MIT），`render.py` 会从 `~/lemo-opuscar` 提供。
-- 字体：照 `STYLE.md` 点名的开源字体，`python3 scripts/fonts.py copy "字体名" 逐帧代码/` 下载到页面旁边，用 `new FontFace` 加载。中文没点名就用思源黑体 / 思源宋体（Mac 一般没装，用 `fonts.py copy "Noto Sans SC"` 或 `"Noto Serif SC"` 下载）。
+- 字体：照 `STYLE.md` 点名的开源字体，`python3 scripts/fonts.py get "字体名"` 下载（下过就秒过），页面里用它打印的地址加载：`new FontFace('Anton','url(/@fonts/anton/Anton-Regular.ttf)')`。**不要复制到页面旁边**（一个中文字体 17MB）。中文没点名就用思源黑体 / 思源宋体（`"Noto Sans SC"` / `"Noto Serif SC"`）。
+- **画图工具（kit）**：每个风格一份，存在 `~/.broll-video-maker/kits/<slug>/`，页面里 `import * as K from '/@kits/<slug>/kit.js'`。
+  - `kit.js`（ES 模块，300 行以内）：`C` 配色常量；`fonts()` 加载这个风格的字体（用 `/@fonts/` 地址）；背景 / 纸张 / 质感；这个风格常用的 4～8 个零件（大数字、标题、标签、箭头、卡片、图表、人物剪影……按 `STYLE.md` 的长相画）。零件都写成「给参数画出来」，静态样图和动画画面都能用（动画时传进度 0～1）。可以 `import` Lemo 的 `/core/lib.js`（缓动、弹簧、噪声）。
+  - `KIT.md`（20 行以内）：配色、字体、质感、构图、动效、禁忌各一两句，加上 `kit.js` 每个函数一句话。下次用这个风格的子任务只读它就能开画。
+  - 只在这台电脑上用，不发给别人、不放进本 skill（风格说明的版权见「版权和致谢」）。
 - 画面里不画字幕条（字幕在剪映里统一加）；竖屏底部 1/5 不放关键内容，给字幕留位置。
 - 不画任何真实品牌的界面、logo、角色；风格说明里写了「不要用它们的名字、界面、字体」的照做。
-- 多个画面共用的零件（纸张、笔触、面板）抽成一个 `.js` 放在 `逐帧代码/` 里，整期一致。
+- 共用的零件放进这个风格的 kit（以后每期都能用）；只有这一期才用的放 `逐帧代码/共用.js`。整期长相一致。
 
 ## 参考图 → 风格 DNA（第 3 步第 1 条）
 按 `references/style-dna.md`：程序量颜色（`dna.py colors 图`，是视频再加 `dna.py cuts 视频`），AI 看图判断其余；只记感觉不抄图。写成 Lemo 同样格式的风格（`style.json` + `STYLE.md`，可参考 `~/lemo-opuscar/styles/_template/STYLE.md` 的小节）放在 `<用户的文件夹>/风格草稿/<slug>/`。出样图时再出一张 `render.py --compare 参考图 样图 --out 对比.png` 给用户看有没有太像；用户觉得太像就说「再离远一点」，把配色或节奏往外推一档。用户满意：`dna.py save 风格草稿/<slug>` 存进 `~/lemo-my-styles/`，以后和 Lemo 风格一起参与挑选。
