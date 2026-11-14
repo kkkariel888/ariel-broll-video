@@ -1,0 +1,24 @@
+{
+  "project": "ariel-broll-video",
+  "user": "第一次用的小白自媒体创作者，只会点按钮",
+  "input": "tests/ux/fixture/口播.mp4（27 秒竖屏口播，没有字幕、没有逐字稿）",
+  "request": "帮我给这个文件夹里的口播视频配 B-roll",
+  "steps": [
+    {"id": "first_reply", "name": "AI 第一句回应", "budget_s": 10},
+    {"id": "page_open", "name": "标黄页面打开", "budget_s": 150},
+    {"id": "mode_chosen", "name": "用户选了文字多 / 动画多"},
+    {"id": "samples_ready", "name": "9 张风格样图出齐", "from": "mode_chosen", "budget_s": 150},
+    {"id": "style_picked", "name": "用户选定风格"},
+    {"id": "review_ready", "name": "审稿表出齐", "from": "style_picked", "budget_s": 360},
+    {"id": "all_approved", "name": "用户点了全部通过"},
+    {"id": "done", "name": "成片放进 B-roll成片/", "from": "all_approved", "budget_s": 240}
+  ],
+  "answers": {
+    "要不要存进我的风格": "不用",
+    "其他任何问题": "按你觉得最好的来"
+  },
+  "page_script": "tests/ux/page.json",
+  "limits": {"first_feedback_s": 10, "silent_wait_s": 45, "click_response_s": 5, "user_clicks": 12, "user_messages": 2, "asks": 2},
+  "deliver": {"allow": ["口播.mp4", "B-roll成片/*.mp4"], "must": ["B-roll成片/*.mp4"]},
+  "total_budget_s": 1200
+}

@@ -41,6 +41,7 @@ body{background:var(--desk);color:var(--ink);font-family:var(--font-body);font-s
 .tabs{display:flex;gap:2px;padding:6px 12px 0;font-size:13px;color:var(--muted)}
 .tabs span{padding:4px 10px}
 .tabs .on{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:500}
+[hidden]{display:none!important}
 .groups{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;padding:6px 8px 4px}
 .grp{display:flex;flex-direction:column;align-items:center;padding:0 10px;border-right:1px solid var(--rule)}
 .grp:last-child{border-right:none}
@@ -78,36 +79,84 @@ h2{font-size:14px;color:var(--muted);font-weight:700;margin:26px 0 6px}
 .mini button:hover{background:var(--ribbon)}
 .mini i{display:inline-block;width:14px;height:14px;background:var(--hl);border:1px solid var(--rule)}
 
-/* ---- 第二步：选风格 ---- */
-.sp{max-width:794px;margin:0 auto 18px;background:var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.18);padding:22px clamp(16px,5vw,40px) 26px;display:none}
-.sp.on{display:block}
-.sp h2{margin:0 0 4px;font-size:17px;color:var(--ink)}
-.sp .hint{font-size:13px;color:var(--muted);margin:0 0 14px;line-height:1.7}
-.sp .row2{display:flex;gap:10px;flex-wrap:wrap}
-.big{font:inherit;font-size:15px;font-weight:500;padding:12px 18px;border-radius:6px;border:1px solid var(--rule);background:var(--ribbon);color:var(--ink);cursor:pointer;min-width:150px}
+/* ---- 四个页签：标黄 / 选风格 / 审稿 / 成片 ---- */
+.tabs button{font:inherit;font-size:13px;border:none;background:transparent;color:var(--muted);padding:4px 10px;cursor:pointer;border-bottom:2px solid transparent}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.tabs button:disabled{opacity:.4;cursor:default}
+.tabs em{font-style:normal;font-size:11px;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:0 6px;margin-left:4px}
+.modebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 18px 8px;font-size:13.5px;border-top:1px solid var(--rule)}
+.modebar b{font-weight:500}
+.modebar.need{background:color-mix(in srgb,var(--hl) 35%,var(--ribbon))}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.seg button{font:inherit;font-size:13.5px;border:none;background:var(--paper);color:var(--ink);padding:7px 14px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:500}
+.view{display:none}.view.on{display:block}
+.panel{max-width:1200px;margin:0 auto;background:var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.18);padding:16px clamp(12px,3vw,28px) 22px}
+.panel h2{margin:0 0 4px;font-size:17px;color:var(--ink)}
+.hint{font-size:13px;color:var(--muted);margin:0 0 12px;line-height:1.7}
+.big{font:inherit;font-size:14px;font-weight:500;padding:9px 16px;border-radius:6px;border:1px solid var(--rule);background:var(--ribbon);color:var(--ink);cursor:pointer}
 .big:hover{border-color:var(--accent)}
 .big.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .big:disabled{opacity:.45;cursor:default}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;margin:6px 0 14px}
-.card{border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--ribbon);display:flex;flex-direction:column}
-.card .shots{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#000}
-.card figure{margin:0;position:relative}
-.card img{width:100%;display:block;background:#000;max-height:420px;object-fit:contain}
-.card figcaption{position:absolute;left:6px;top:6px;font-size:11px;background:rgba(0,0,0,.6);color:#fff;padding:1px 6px;border-radius:3px}
-.card .meta{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px}
-.card b{font-size:15px}
-.card .why{font-size:12.5px;color:var(--muted);line-height:1.6}
-.card .tag{font-size:11px;color:var(--accent);font-weight:700}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:r 0.8s linear infinite;vertical-align:-2px;margin-right:6px}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:r .8s linear infinite;vertical-align:-2px;margin-right:6px}
 @keyframes r{to{transform:rotate(360deg)}}
-.done-box{font-size:15px;line-height:1.8}
-.done-box b{color:var(--accent)}
+/* 3×3 样图墙：每块 = 一个风格的 3 张（同样 3 句原话）；两种排法自动选图更大的：
+   a = 一个风格一行（窄屏 / 侧边栏），b = 风格并排、9 张一行（宽屏） */
+.legend{color:var(--muted)}
+.legend i,.cell i{font-style:normal;font-weight:700;color:var(--accent)}
+.grid{display:flex;gap:10px 18px}
+.grid.a{flex-direction:column}
+.grid.b{flex-direction:row;flex-wrap:wrap;align-items:flex-start}
+.sblk{display:flex;gap:10px}
+.grid.a .sblk{flex-direction:row;align-items:center}
+.grid.b .sblk{flex-direction:column}
+.cells{display:flex;gap:6px}
+.grid .rowh{display:flex;flex-direction:column;gap:4px;font-size:12.5px;line-height:1.45;min-width:0}
+.grid.a .rowh{width:160px;flex:none}
+.grid.b .rowh{gap:2px}
+.grid.b .rowh .why{-webkit-line-clamp:1}
+.grid .rowh b{font-size:14px}
+.grid .rowh .tag{font-size:11px;color:var(--accent);font-weight:700}
+.grid .rowh .why{color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.grid .rowh.chosen b::after{content:"  ✓ 已选";color:var(--accent);font-size:12px}
+.grid.b .rowh .big{padding:6px 10px;margin-top:4px}
+.cell i{position:absolute;top:3px;left:5px;font-size:12px;color:#fff;text-shadow:0 0 3px #000}
+.cell{position:relative;flex:none;background:#000;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:zoom-in}
+.cell img{display:block;width:100%;height:100%;object-fit:contain}
+.cell.wait{cursor:default;color:#aaa;font-size:12px;background:repeating-linear-gradient(45deg,#1b1b1b 0 8px,#222 8px 16px)}
+.mine{margin-top:16px;border-top:1px solid var(--rule);padding-top:12px}
+.mine .list{display:flex;gap:10px;flex-wrap:wrap}
+.mcard{border:1px solid var(--rule);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;background:var(--ribbon);font-size:13px}
+.mcard .th{display:flex;gap:3px}.mcard .th img{width:54px;height:96px;object-fit:cover;border-radius:3px;cursor:zoom-in;background:#000}
+/* 逐帧审稿表 */
+.tablewrap{overflow:auto;max-height:calc(100vh - 230px);border:1px solid var(--rule);border-radius:6px;cursor:grab}
+.tablewrap.drag{cursor:grabbing;user-select:none}
+table.rv{border-collapse:collapse;font-size:13px;min-width:900px;width:100%}
+.rv th{position:sticky;top:0;background:var(--ribbon);z-index:1;text-align:left;font-weight:500;padding:7px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
+.rv td{padding:8px;border-bottom:1px solid var(--rule);vertical-align:top}
+.rv .no{font-weight:700;white-space:nowrap}.rv .tm{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rv .fr{display:flex;gap:4px}.rv .fr img{height:150px;border-radius:3px;cursor:zoom-in;background:#000}
+.rv .pl{width:96px;height:150px;border:0;border-radius:3px;background:#000}
+.rv .ops{display:flex;flex-direction:column;gap:6px;min-width:150px}
+.rv textarea{font:inherit;font-size:12.5px;width:100%;min-height:52px;border:1px solid var(--rule);border-radius:4px;padding:4px;background:var(--paper);color:var(--ink)}
+.rv tr.ok td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.rv tr.fix td{background:color-mix(in srgb,var(--hl) 25%,transparent)}
+.badge{font-size:12px;font-weight:500}
+.clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.clips figure{margin:0;font-size:12.5px}.clips video{width:100%;border-radius:4px;background:#000}
+/* 点图放大 */
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:50;flex-direction:column;gap:8px}
+.lb.on{display:flex}.lb img{max-width:94vw;max-height:86vh;object-fit:contain}
+.lb .cap{color:#ddd;font-size:13px;max-width:90vw;text-align:center}
+.lb button{position:absolute;top:50%;background:rgba(255,255,255,.15);color:#fff;border:none;font-size:28px;width:44px;height:64px;cursor:pointer;border-radius:6px}
+.lb .prev{left:12px}.lb .next{right:12px}.lb .x{top:12px;right:12px;height:44px}
 @media (max-width:520px){.grp{padding:0 4px}.tb{min-width:38px}.tb small{font-size:10.5px}}
 </style>
 </head>
 <body>
 <header class="ribbon">
-  <div class="tabs"><span>文件</span><span class="on">开始</span><span>插入</span><span>审阅</span></div>
+  <div class="tabs" id="tabs"><button data-v="doc" class="on">① 标黄</button><button data-v="style" disabled>② 选风格<em id="bStyle" hidden></em></button><button data-v="review" disabled>③ 审稿<em id="bReview" hidden></em></button><button data-v="out" disabled>④ 成片</button></div>
   <div class="groups">
     <div class="grp"><div class="row">
       <button class="tb" id="undo" type="button" title="撤销 (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 7H4V2"/><path d="M4 7c2-3 5-4 8-4a8 8 0 010 16H8"/></svg><small>撤销</small></button>
@@ -125,20 +174,32 @@ h2{font-size:14px;color:var(--muted);font-weight:700;margin:26px 0 6px}
       <button class="ok" id="ok" type="button">确认标黄</button>
     </div><div class="lbl">完成</div></div>
   </div>
+  <div class="modebar need" id="modebar"><b>先选一下：这期 B-roll 想要</b><span class="seg"><button type="button" data-m="text" aria-pressed="false">文字讲解多一点</button><button type="button" data-m="anim" aria-pressed="false">纯动画多一点</button></span><span id="modeTip">选好 AI 就开始画风格样图，你接着改标黄就行</span></div>
   <div class="status" id="status">正在连接…</div>
 </header>
 
 <main class="page">
-<section class="sp" id="sp">
-  <h2 id="spTitle">第二步：选风格</h2>
-  <p class="hint" id="spHint"></p>
-  <div id="spBody"></div>
-</section>
-<article class="sheet">
+<section class="view" id="v-style"><div class="panel">
+  <p class="hint" id="stHint" style="margin-top:0"></p>
+  <div class="grid a" id="grid"></div>
+  <div class="row2" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="big" id="more" type="button">再来 3 个风格</button></div>
+  <div class="mine" id="mine" hidden><h2 style="font-size:15px">我的风格</h2><p class="hint">以前存下的风格，直接点「用这个」。</p><div class="list" id="mineList"></div></div>
+</div></section>
+<section class="view" id="v-review"><div class="panel">
+  <h2>逐帧审稿</h2><p class="hint" id="rvHint"></p>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap"><button class="big pri" id="approveAll" type="button">全部通过，出片</button><span class="badge" id="rvCount"></span></div>
+  <div class="tablewrap" id="tw"><table class="rv"><thead><tr><th>编号</th><th>原话</th><th>时间</th><th>关键帧（点开放大）</th><th>动画</th><th>你的意见</th></tr></thead><tbody id="rvBody"></tbody></table></div>
+</div></section>
+<section class="view" id="v-out"><div class="panel">
+  <h2>成片</h2><p class="hint" id="outHint"></p><div class="clips" id="clips"></div>
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="big pri" id="saveStyle" type="button" hidden>把这个风格存进「我的风格」</button><span class="hint" id="saveTip" style="margin:0"></span></div>
+</div></section>
+<section class="view on" id="v-doc"><article class="sheet">
   <h1 id="ttl"></h1>
   <p class="tip">每段上方的小字是它在视频里的时间。和 Word 一样：<b>先选中文字，再点「突出显示」</b>就标黄；选中后点「无颜色」就去掉。不选文字直接点「突出显示」，鼠标会变成荧光笔，直接划过文字就标黄，按 <kbd>Esc</kbd> 退出。<b>跳着选好几处</b>：按住 <kbd>Ctrl</kbd>（Mac 按 <kbd>⌘</kbd>）再一处一处划选，选好后点一次「突出显示」全部标黄。<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> 撤销。AI 建议过、被你去掉的地方会留一条虚线。</p>
   <div class="doc" id="doc"></div>
-</article></main>
+</article></section></main>
+<div class="lb" id="lb"><button class="x" type="button">×</button><button class="prev" type="button">‹</button><img id="lbImg" alt=""><div class="cap" id="lbCap"></div><button class="next" type="button">›</button></div>
 
 <div class="mini" id="mini"><button type="button" id="miniMark"><i></i>突出显示</button><button type="button" id="miniClear">无颜色</button></div>
 
@@ -280,7 +341,7 @@ document.getElementById("copy").addEventListener("click",async()=>{
   catch(e){setStatus("复制没成功。可以直接回对话里说「标好了」。");}
 });
 let confirmed=false;
-document.getElementById("ok").addEventListener("click",()=>{confirmed=true; save(true);});
+document.getElementById("ok").addEventListener("click",()=>{ if(!bmode){setStatus("先在上面选「文字讲解多一点 / 纯动画多一点」，再确认标黄。"); $("modebar").scrollIntoView(); return;} confirmed=true; save(true);});
 
 /* ---------- 保存：本地小助手 > Claude 页面存储 > 复制粘贴 ---------- */
 const statusEl=document.getElementById("status");
@@ -295,61 +356,150 @@ async function save(){
     const data=payload();
     if(backend==="local"){const r=await fetch("api/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)}); if(!r.ok) throw new Error("本地小助手没响应");}
     else await db.doc("transcript/current").set(data);
-    setStatus(confirmed?(backend==="local"?"已确认，共 "+data.count+" 处。往下一步：选风格。":"已确认，共 "+data.count+" 处。回到对话里说「标好了」，AI 会直接读取。"):"已自动保存。标完点「确认标黄」。",confirmed);
-    if(confirmed) spStart();
+    setStatus(confirmed?(backend==="local"?"已确认，共 "+data.count+" 处。风格样图在「② 选风格」。":"已确认，共 "+data.count+" 处。回到对话里说「标好了」，AI 会直接读取。"):"已自动保存。标完点「确认标黄」。",confirmed);
+    if(confirmed) onConfirmed();
   }catch(e){setStatus("保存没成功（"+(e&&e.message||"未知原因")+"）。可以点「复制结果」粘贴给 AI。");}
   busy=false; if(again){again=false; save();}
 }
 
-// ---------------- 第二步：选风格（只在本机小助手模式下出现） ----------------
-const sp=document.getElementById("sp"), spBody=document.getElementById("spBody"), spHint=document.getElementById("spHint");
-let spTimer=null, spLast="";
-async function spCall(body){
-  const r = body ? await fetch("api/style",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}) : await fetch("api/style",{cache:"no-store"});
-  if(!r.ok) throw new Error("小助手没响应"); return r.json();
-}
+// ---------------- 选风格 / 审稿 / 成片（只在本机小助手模式下有） ----------------
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
-function spDraw(st){
-  const key=JSON.stringify([st.phase,st.mode,st.msg,(st.cards||[]).map(c=>c.id+c.img),st.chosen&&st.chosen.style_id,st.last&&st.last.id]);
-  if(key===spLast) return; spLast=key;
-  sp.classList.add("on");
-  const lastBtn = st.last ? `<button class="big" data-a="last">用上次那个（${esc(st.last.name)}）</button>` : "";
-  if(st.phase==="mode"){
-    spHint.textContent="点一下就行，不用打字。";
-    spBody.innerHTML=`<p class="hint" style="margin-top:0">这期 B-roll 想要：</p><div class="row2">
-      <button class="big pri" data-m="text">文字讲解多一点</button><button class="big pri" data-m="anim">纯动画多一点</button></div>`;
-  }else if(st.phase==="waiting"){
-    spHint.innerHTML=`<span class="spin"></span>AI 正在从风格库里挑，并用你这期的原话画样图，一般要一两分钟…`; spBody.innerHTML="";
-  }else if(st.phase==="rendering"){
-    spHint.innerHTML=`<span class="spin"></span>正在用你这期的原话出样图，几秒钟…`; spBody.innerHTML="";
-  }else if(st.phase==="choose"){
-    spHint.textContent = st.msg || (st.cards.length>1 ? "换了 2 个最接近的，看哪个顺眼：" : "AI 按这期内容挑的风格，样图用的是你的原话。后面每个画面都会按这个风格专门画：");
-    spBody.innerHTML = `<div class="cards">${(st.cards||[]).map(c=>`<div class="card"><div class="shots">${(c.imgs||[{img:c.img}]).map(x=>`<figure><img src="${esc(x.img)}?v=${Date.now()}" alt="${esc(c.name)} 样图"></figure>`).join("")}</div>
-      <div class="meta"><span class="tag">${esc({lemo:"Lemo 风格库",mine:"我的风格",dna:"参考图 DNA",github:"GitHub 导入"}[c.source]||"")}</span><b>${esc(c.name)}</b><span class="why">${esc(c.why)}</span>
-      <button class="big pri" data-a="ok" data-id="${esc(c.id)}">就这个</button></div></div>`).join("")}</div>
-      <div class="row2"><button class="big" data-a="next">换一个</button>${lastBtn}</div>`;
-  }else if(st.phase==="done"){
-    const c=st.chosen||{};
-    spHint.textContent="";
-    spBody.innerHTML=`<div class="done-box">已选 <b>${esc(c.name)}</b>（${c.mode==="text"?"文字讲解多一点":"纯动画多一点"}）。回到对话里说「选好了」，AI 就开始出逐帧图。</div>
-      <div class="row2" style="margin-top:10px"><button class="big" data-a="reopen">重新选</button></div>`;
-  }else if(st.phase==="error"){
-    spHint.textContent=st.msg||"出错了"; spBody.innerHTML=`<div class="row2"><button class="big" data-a="next">再试一次</button></div>`;
-  }
+let ST=null, bmode=null, view="doc", seen={}, pollTimer=null;
+const $=id=>document.getElementById(id);
+async function act(body){
+  const r=await fetch("api/act",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error("小助手没响应"); ST=await r.json(); draw(); return ST;
 }
-async function spPoll(){
-  try{ const st=await spCall(); spDraw(st); clearTimeout(spTimer);
-    if(["waiting","rendering"].includes(st.phase)||st.msg) spTimer=setTimeout(spPoll,2000); }
-  catch(e){ spHint.textContent="选风格的小助手连不上："+e.message; }
+function show(v){view=v; document.querySelector(".ribbon .groups").hidden=v!=="doc"; $("modebar").hidden=v!=="doc"&&!!bmode; document.querySelectorAll(".view").forEach(e=>e.classList.toggle("on",e.id==="v-"+v));
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); window.scrollTo(0,0); if(v==="style") fitGrid();}
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("button"); if(b&&!b.disabled) show(b.dataset.v);});
+
+/* 文字多 / 动画多：第一件事 */
+$("modebar").addEventListener("click",async e=>{const b=e.target.closest("button[data-m]"); if(!b) return;
+  if(backend!=="local"){bmode=b.dataset.m; drawMode(); return;}
+  try{await act({act:"mode",mode:b.dataset.m}); if(!confirmed) setStatus("已选好。标完点「确认标黄」。");}catch(err){setStatus("没点成功："+err.message);} });
+function drawMode(){
+  document.querySelectorAll("#modebar button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===bmode));
+  $("modebar").classList.toggle("need",!bmode); $("modebar").hidden=view!=="doc"&&!!bmode;
+  $("modeTip").textContent=bmode?(confirmed?"已选。":"已选。AI 正在按这个画风格样图，你接着改标黄就行。"):"选好 AI 就开始画风格样图，你接着改标黄就行";
 }
-spBody.addEventListener("click",async e=>{
-  const b=e.target.closest("button"); if(!b) return;
-  spBody.querySelectorAll("button").forEach(x=>x.disabled=true);
-  const body = b.dataset.m ? {act:"mode",mode:b.dataset.m} : {act:b.dataset.a,id:b.dataset.id};
-  try{ spDraw(await spCall(body)); }catch(err){ spHint.textContent="没点成功："+err.message; }
-  setTimeout(spPoll,300);
+
+/* 3×3 样图墙 */
+const LBS={style:[],rv:[]}; let LB=LBS.style; // 放大看的图片列表
+function fitGrid(){
+  const g=$("grid"); if(!ST||!g.childElementCount) return;
+  const n=g.children.length, [W,H]=(ST.review.size||"1080x1920").split("x").map(Number), ar=W/H, gap=6;
+  const top=g.getBoundingClientRect().top, availH=Math.max(260,innerHeight-top-64), Wg=g.clientWidth;
+  // a：一个风格一行
+  const hA=Math.min((Wg-170-2*gap)/3/ar, availH/n-10);
+  // b：风格并排（一行最多 3 块）
+  const k=Math.min(n,3), lines=Math.ceil(n/k), wB=(Wg-(k-1)*18-k*2*gap)/(3*k);
+  const hB=Math.min(wB/ar, availH/lines-88);
+  const useB=hB>hA*1.08, h=Math.max(90,useB?hB:hA), w=h*ar;
+  g.className="grid "+(useB?"b":"a");
+  g.querySelectorAll(".cell").forEach(c=>{c.style.height=Math.floor(h)+"px";c.style.width=Math.floor(w)+"px";});
+  if(useB) g.querySelectorAll(".rowh").forEach(r=>r.style.width=Math.floor(3*w+2*gap)+"px"); else g.querySelectorAll(".rowh").forEach(r=>r.style.width="");
+}
+addEventListener("resize",fitGrid);
+const sent=x=>typeof x==="string"?x:((x||{}).text||"");
+function drawStyles(){
+  const S=ST.styles, rows=S.rows, chosen=ST.chosen&&ST.chosen.slug; const N="①②③";
+  const ready=rows.filter(r=>r.ready).length;
+  $("stHint").innerHTML = !rows.length ? (bmode?`<span class="spin"></span>AI 正在挑 3 个风格，并用你这期的 3 句原话同时画样图，一般 2 分钟内…`:"先在最上面选「文字讲解多一点 / 纯动画多一点」，AI 就开始画。")
+    : (ready<rows.length||S.drawing ? `<span class="spin"></span>已画好 ${ready}/${rows.length} 个风格，画好一个出一个。` : "点图放大，点「就这个」选定。")+(S.note?" "+esc(S.note):"")+(rows.length?`<span class="legend">　每个风格画同样 3 句：`+[0,1,2].map(k=>`<i>${N[k]}</i> ${esc(sent(S.sentences[k]))}`).join("　")+"</span>":"");
+  const SRC={lemo:"Lemo 风格库",mine:"我的风格",dna:"参考图 DNA",github:"GitHub 导入"};
+    let h="";
+  LBS.style.length=0;
+  rows.forEach(r=>{
+    h+=`<div class="sblk"><div class="rowh${r.slug===chosen?" chosen":""}"><span class="tag">${esc(SRC[r.source]||"")}</span><b>${esc(r.name)}</b><span class="why">${esc(r.why)}</span>
+      <button class="big${r.slug===chosen?"":" pri"}" data-pick="${esc(r.slug)}" ${r.ready?"":"disabled"}>${r.slug===chosen?"已选这个":"就这个"}</button></div><div class="cells">`;
+    r.cells.forEach((c,k)=>{ if(c){LBS.style.push({src:c,cap:r.name+" · "+sent(S.sentences[k])}); h+=`<div class="cell" data-lb="${LBS.style.length-1}"><img src="${esc(c)}" alt="${esc(r.name)} 样图 ${k+1}"><i>${N[k]}</i></div>`;}
+      else h+=`<div class="cell wait"><span><span class="spin"></span>画图中</span><i>${N[k]}</i></div>`; });
+    h+=`</div></div>`;
+  });
+  $("grid").innerHTML=rows.length?h:""; fitGrid();
+  const M=ST.mine||[]; $("mine").hidden=!M.length;
+  $("mineList").innerHTML=M.map(m=>`<div class="mcard"><b>${esc(m.name)}</b><div class="th">${m.thumbs.map(t=>{LBS.style.push({src:t,cap:m.name});return `<img src="${esc(t)}" data-lb="${LBS.style.length-1}" alt="">`}).join("")}</div><button class="big${m.slug===chosen?"":" pri"}" data-pick="${esc(m.slug)}">${m.slug===chosen?"已选这个":"用这个"}</button></div>`).join("");
+}
+$("v-style").addEventListener("click",async e=>{
+  const lb=e.target.closest("[data-lb]"); if(lb){LB=LBS.style; openLB(+lb.dataset.lb);return;}
+  const b=e.target.closest("button[data-pick]"); if(b){b.disabled=true; try{await act({act:"pick",slug:b.dataset.pick}); setStatus("风格已选好，AI 开始画每个画面。画好会出现在「③ 审稿」。",true);}catch(err){setStatus("没点成功："+err.message);} }
 });
-function spStart(){ if(backend!=="local"||!confirmed) return; sp.classList.add("on"); spPoll(); sp.scrollIntoView({behavior:"smooth",block:"start"}); }
+$("more").addEventListener("click",async()=>{$("more").disabled=true; try{await act({act:"more"}); setStatus("AI 再挑 3 个风格来画，画好接在下面，之前的都还在。");}catch(e){} setTimeout(()=>$("more").disabled=false,8000);});
+
+/* 点图放大 */
+let lbI=0;
+function openLB(i){lbI=i; const x=LB[i]; if(!x) return; $("lbImg").src=x.src; $("lbCap").textContent=x.cap+"　（"+(i+1)+"/"+LB.length+"）"; $("lb").classList.add("on");}
+$("lb").addEventListener("click",e=>{ if(e.target.classList.contains("prev")) openLB((lbI-1+LB.length)%LB.length);
+  else if(e.target.classList.contains("next")) openLB((lbI+1)%LB.length); else if(e.target.id!=="lbImg") $("lb").classList.remove("on"); });
+document.addEventListener("keydown",e=>{ if(!$("lb").classList.contains("on")) return;
+  if(e.key==="ArrowLeft") openLB((lbI-1+LB.length)%LB.length); if(e.key==="ArrowRight") openLB((lbI+1)%LB.length); if(e.key==="Escape") $("lb").classList.remove("on"); });
+
+/* 逐帧审稿表 */
+let rvKey="";
+function drawReview(){
+  const R=ST.review, rows=R.rows, okN=rows.filter(r=>r.mark&&r.mark.ok).length, fixN=rows.filter(r=>r.mark&&!r.mark.ok).length;
+  $("rvHint").textContent=R.note||"每一行一个画面：看关键帧和右边播放的动画。没问题不用点，要改的点「要改」写一句；看完点「全部通过，出片」。";
+  $("rvCount").textContent=rows.length?`${rows.length} 个画面：通过 ${okN}，要改 ${fixN}`:"";
+  $("approveAll").disabled=!rows.length||R.approved;
+  if(R.approved) $("approveAll").textContent="已全部通过，正在出片…";
+  const key=JSON.stringify(rows.map(r=>[r.no,r.frames,r.mark,r.player]));
+  if(key===rvKey) return; rvKey=key;
+  LBS.rv.length=0;
+  $("rvBody").innerHTML=rows.map(r=>{
+    const st=r.mark?(r.mark.ok?"ok":"fix"):"";
+    return `<tr class="${st}" data-no="${esc(r.no)}"><td class="no">${esc(r.no)}</td><td style="min-width:180px">${esc(r.text)}</td>
+    <td class="tm">${esc(r.time||"")}</td>
+    <td><div class="fr">${r.frames.map((f,k)=>{LBS.rv.push({src:f,cap:r.no+" · "+["开场","最满","定格"][k]+" · "+r.text});return `<img src="${esc(f)}" data-lb="${LBS.rv.length-1}" alt="">`}).join("")}</div></td>
+    <td>${r.player?`<iframe class="pl" loading="lazy" src="${esc(r.player)}" title="${esc(r.no)} 动画"></iframe>`:""}</td>
+    <td><div class="ops">${st==="ok"?'<span class="badge">✓ 通过</span>':""}${st==="fix"?`<span class="badge">要改：${esc(r.mark.note)}</span>`:""}
+      <button class="big" data-ok="${esc(r.no)}" type="button">通过</button>
+      <textarea placeholder="要改哪里？写一句，比如：字太小 / 数字换成红色"></textarea><button class="big" data-fix="${esc(r.no)}" type="button">要改</button></div></td></tr>`;}).join("");
+}
+$("rvBody").addEventListener("click",async e=>{
+  const lb=e.target.closest("[data-lb]"); if(lb){LB=LBS.rv; openLB(+lb.dataset.lb);return;}
+  const ok=e.target.closest("button[data-ok]"), fx=e.target.closest("button[data-fix]");
+  if(ok) await act({act:"review",no:ok.dataset.ok,ok:true});
+  if(fx){const note=fx.parentElement.querySelector("textarea").value.trim(); if(!note){setStatus("写一句要改哪里再点「要改」。");return;}
+    await act({act:"review",no:fx.dataset.fix,ok:false,note}); setStatus(fx.dataset.fix+" 已交给 AI 去改，改好会自动刷新这一行。");}
+});
+$("approveAll").addEventListener("click",async()=>{ $("approveAll").disabled=true; await act({act:"approve_all"});
+  setStatus(ST.review.approved?"全部通过。AI 开始出片，好了会出现在「④ 成片」。":"有画面还标着「要改」，AI 改好后再点一次。",ST.review.approved); });
+/* 表格按住拖动 */
+(()=>{const tw=$("tw"); let d=null;
+  tw.addEventListener("mousedown",e=>{ if(e.target.closest("button,textarea,img,iframe,a")) return; d={x:e.clientX,y:e.clientY,l:tw.scrollLeft,t:tw.scrollTop}; tw.classList.add("drag");});
+  addEventListener("mousemove",e=>{ if(!d) return; tw.scrollLeft=d.l-(e.clientX-d.x); tw.scrollTop=d.t-(e.clientY-d.y);});
+  addEventListener("mouseup",()=>{d=null; tw.classList.remove("drag");});})();
+
+/* 成片 */
+function drawOut(){
+  const O=ST.outputs;
+  $("outHint").innerHTML=O.clips.length?(esc(O.note)||"成片已经放进你的文件夹。点播放看看；拖进剪映就行，文件名里就是它该放的时间点。"):(O.rendering?'<span class="spin"></span>正在出片…':"");
+  const key=JSON.stringify(O.clips.map(c=>c.url)); if(seen.out!==key){seen.out=key;
+    $("clips").innerHTML=O.clips.map(c=>`<figure><video src="${esc(c.url)}" controls preload="metadata" playsinline></video><figcaption>${esc(c.file)}</figcaption></figure>`).join("");}
+  const ch=ST.chosen, saved=ch&&(ST.mine||[]).some(m=>m.slug===ch.slug);
+  $("saveStyle").hidden=!(ch&&O.clips.length&&!saved);
+  $("saveTip").textContent=saved&&O.clips.length?"这个风格已经在「我的风格」里，下次标黄页面上直接选。":(ch&&O.clips.length?"存下来，下次标黄页面上直接选，不用再挑。":"");
+}
+$("saveStyle").addEventListener("click",async()=>{$("saveStyle").disabled=true; await act({act:"save_style"}); setStatus("已存进「我的风格」。",true);});
+
+/* 刷新：每 1.5 秒看一眼 AI 有没有新东西，有就画出来、自动跳到该看的页签 */
+function draw(){
+  if(!ST) return;
+  bmode=ST.mode; drawMode();
+  const tabs={style:ST.styles.rows.length>0||!!bmode, review:ST.review.rows.length>0, out:ST.outputs.clips.length>0||ST.outputs.rendering};
+  document.querySelectorAll("#tabs button").forEach(b=>{ if(b.dataset.v!=="doc") b.disabled=!tabs[b.dataset.v]; });
+  const sk=JSON.stringify([ST.styles,ST.chosen&&ST.chosen.slug,(ST.mine||[]).map(m=>m.slug)]); if(seen.st!==sk){seen.st=sk; drawStyles();}
+  drawReview(); drawOut();
+  const nReady=ST.styles.rows.filter(r=>r.ready).length; $("bStyle").hidden=!nReady; $("bStyle").textContent=nReady;
+  $("bReview").hidden=!ST.review.rows.length; $("bReview").textContent=ST.review.rows.length;
+  // 自动跳页签：只在出现新阶段时跳一次
+  const stage=!confirmed?null:tabs.out&&ST.outputs.clips.length?"out":tabs.review&&ST.chosen?"review":(confirmed&&nReady?"style":null);
+  if(stage&&seen.stage!==stage){seen.stage=stage; show(stage);}
+}
+async function poll(){ try{ const r=await fetch("api/all",{cache:"no-store"}); if(r.ok){ST=await r.json(); draw();} }catch(e){} }
+function startPoll(){ if(pollTimer) return; poll(); pollTimer=setInterval(poll,1500); }
+function onConfirmed(){ if(backend!=="local") return; startPoll(); if(ST&&ST.styles.rows.some(r=>r.ready)) show("style"); }
 function loadRanges(rs){ if(!rs||rs.length!==paras.length) return; rs.forEach((list,i)=>{bits[i].fill(0); list.forEach(([s,e])=>bits[i].fill(1,s,e));}); }
 render();
 (async()=>{
@@ -367,7 +517,7 @@ render();
   }
   if(!backend) backend="copy";
   render();
-  if(backend==="local"&&confirmed) spStart();
+  if(backend==="local") startPoll(); else {document.querySelectorAll("#tabs button").forEach(b=>{if(b.dataset.v!=="doc")b.hidden=true;});}
 })();
 </script>
 </body>

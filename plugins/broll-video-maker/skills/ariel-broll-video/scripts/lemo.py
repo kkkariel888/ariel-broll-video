@@ -90,15 +90,29 @@ def catalog():
                      'line': s.get('line_cn'), 'uses': s.get('uses', []), 'summary': q, 'essence': e,
                      'style_md': str(md), 'source': 'lemo'})
     for d in sorted(MINE.glob('*/')) if MINE.exists() else []:
-        sj, md = d / 'style.json', d / 'STYLE.md'
-        if sj.exists() and md.exists():
-            s = json.loads(sj.read_text(encoding='utf-8'))
+        sj = d / 'style.json'
+        if not sj.exists():
+            continue
+        s = json.loads(sj.read_text(encoding='utf-8'))
+        md = mine_md(d, s)
+        if md:
             q, e = essence(md)
             rows.append({'slug': s.get('slug', d.name), 'cn': s.get('cn'), 'en': s.get('en'), 'category': '我的风格',
                          'line': s.get('line_cn', ''), 'uses': [], 'summary': q, 'essence': e, 'style_md': str(md), 'source': 'mine'})
     return rows
 
+def mine_md(d, s):
+    """我的风格：从 Lemo / GitHub 存的只记位置（ref_style_md，版权原因不复制内容），自己做的才有 STYLE.md。"""
+    ref = pathlib.Path(os.path.expanduser(s.get('ref_style_md') or ''))
+    if s.get('ref_style_md') and ref.exists():
+        return ref
+    return d / 'STYLE.md' if (d / 'STYLE.md').exists() else None
+
 def style_md(slug):
+    if (MINE / slug / 'style.json').exists():
+        md = mine_md(MINE / slug, json.loads((MINE / slug / 'style.json').read_text(encoding='utf-8')))
+        if md:
+            return md
     for base in [MINE / slug, LIB / 'styles' / slug]:
         if (base / 'STYLE.md').exists():
             return base / 'STYLE.md'
