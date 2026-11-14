@@ -1,5 +1,5 @@
 ---
-name: broll-video-maker
+name: ariel-broll-video
 description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字幕就用，没有就在本机自动听写，有逐字稿还能拿来纠字，手机剪映用户不用开电脑版），自动审错别字、在侧边仿 Word 页面标黄，再从 Lemo-Opuscar 风格库（或用户的参考图 DNA、用户给的 GitHub 风格链接）挑一个风格，用这期原话画样图点一下选定，然后按这个风格给每一处标黄现画画面、逐帧审稿、对齐语速出片（B-roll 一律 1080P 60 帧，不管原片多糊）。Claude Code、Claude 桌面 app（含 Cowork）、Codex 通用。
 ---
 
