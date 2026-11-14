@@ -152,6 +152,8 @@ codex plugin add broll-video-maker@ariel-broll-video
 
 ## 怎么用
 
+> 在对话框打 **`/ariel`** 就能找到它（`ariel-broll-video`），点一下就调出来；直接说「帮我配 B-roll」也行。
+
 1. 把这期的**口播视频**放进一个文件夹。手机剪映直接导出视频就行，**不用导字幕**。
    - 有逐字稿（Word / txt）也放进去，字幕会更准，错别字基本没有
    - 用电脑剪映、已经导出了字幕（.srt）的，也可以放进去，会直接用它

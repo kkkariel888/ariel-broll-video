@@ -12,6 +12,7 @@ set -u
 REPO="kkkariel888/ariel-broll-video"
 MARKET="ariel-broll-video"
 PLUGIN="broll-video-maker"
+SKILL=ariel-broll-video
 CHECK_ONLY=0; [ "${1:-}" = "--check" ] && CHECK_ONLY=1
 
 ok=();  todo=()
@@ -60,8 +61,8 @@ say "== 2/3 下载风格库 =="
 if [ $CHECK_ONLY = 0 ] && have git && have python3; then
   tmp="$(mktemp -d)"
   if git clone --depth 1 --filter=blob:none --sparse "https://github.com/$REPO.git" "$tmp/r" >/dev/null 2>&1 \
-     && git -C "$tmp/r" sparse-checkout set "plugins/$PLUGIN/skills/$PLUGIN/scripts" >/dev/null 2>&1 \
-     && python3 "$tmp/r/plugins/$PLUGIN/skills/$PLUGIN/scripts/lemo.py" ensure; then
+     && git -C "$tmp/r" sparse-checkout set "plugins/$PLUGIN/skills/$SKILL/scripts" >/dev/null 2>&1 \
+     && python3 "$tmp/r/plugins/$PLUGIN/skills/$SKILL/scripts/lemo.py" ensure; then
     ok+=("Lemo-Opuscar 风格库（~/lemo-opuscar）")
   else
     todo+=("风格库没下载成功（多半是连不上 GitHub），网络好了再跑一次")

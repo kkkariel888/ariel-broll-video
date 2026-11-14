@@ -6,7 +6,7 @@
 这个仓库只装一个 skill：broll-video-maker（口播配动画 B-roll）。它同时按 Claude 和 Codex 的格式摆好：
 - Claude 读 `.claude-plugin/marketplace.json`，插件信息在 `plugins/<名字>/.claude-plugin/plugin.json`
 - Codex 读 `.agents/plugins/marketplace.json`，插件信息在 `plugins/<名字>/.codex-plugin/plugin.json`
-- 两边用的是同一份 skill：`plugins/broll-video-maker/skills/broll-video-maker/`
+- 两边用的是同一份 skill：`plugins/broll-video-maker/skills/ariel-broll-video/`
 
 ## 1. 能跑命令（Claude Code、Codex 命令行、Codex 桌面 app、连着电脑的 Claude app）：一条命令装好全部
 ```bash
@@ -25,7 +25,7 @@ git clone --depth 1 https://github.com/kkkariel888/ariel-broll-video.git /tmp/ar
 - 连不上 GitHub：等网络好了再跑
 
 ## 1b. Windows
-`install.sh` 只支持 Mac / Linux。Windows 上请一步步装：`winget install Git.Git`、`winget install Gyan.FFmpeg`，确认有 Chrome 或 Edge；再用 `python plugins/broll-video-maker/skills/broll-video-maker/scripts/lemo.py ensure` 下载风格库；最后按下面对应的软件添加插件市场。
+`install.sh` 只支持 Mac / Linux。Windows 上请一步步装：`winget install Git.Git`、`winget install Gyan.FFmpeg`，确认有 Chrome 或 Edge；再用 `python plugins/broll-video-maker/skills/ariel-broll-video/scripts/lemo.py ensure` 下载风格库；最后按下面对应的软件添加插件市场。
 
 ## 2. Claude 桌面 app / 网页版：在 app 里添加一次
 1. Customize → Plugins → Add marketplace（从 GitHub 仓库添加）
