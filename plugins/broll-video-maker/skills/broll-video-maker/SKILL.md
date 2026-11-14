@@ -11,7 +11,7 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 - `scripts/highlight_server.py`：标黄 + 选风格小助手（只用 Python 自带库）
 - `scripts/lemo.py`：下载 / 更新 Lemo-Opuscar 风格库，列出能用的风格
 - `scripts/render.py`：把画面页渲染成关键帧图或视频（Python 自带库 + 本机 Chrome + ffmpeg；视频默认 1080P 60 帧）
-- `scripts/transcribe.py`：没有 SRT 时在本机把口播听写成字幕，有逐字稿就用逐字稿纠字（whisper.cpp，不上传）
+- `scripts/transcribe.py`：没有 SRT 时在本机把口播听写成字幕，有逐字稿就用逐字稿纠字（SenseVoice，只用 CPU，不上传；Claude Code、Cowork、Codex 都能跑）
 - `scripts/dna.py`：参考图量主色、量剪辑节奏、查 GitHub 许可证、存进「我的风格」
 - `scripts/fonts.py`：下载风格说明里点名的开源字体
 - `assets/highlighter.html`：仿 Word 的标黄页面，确认后接着选风格
@@ -22,11 +22,11 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 0. `python3 <本skill>/scripts/update_check.py`：查有没有新版本，有就自己更新（下次对话生效）。只在最后一行是 `STATUS=updated` 或 `outdated` 时跟用户说一句，其他情况不吭声。
 1. `python3 <本skill>/scripts/lemo.py ensure`：第一次会把 Lemo-Opuscar 下载到 `~/lemo-opuscar`（约 30MB），以后只更新。
    **必须下载成功才能往下走。** 失败就把它打印的原因告诉用户（多半是网络连不上 GitHub），等用户说「重试」。没有保底风格，不要自己凑。
-2. 检查 `git`、`ffmpeg`、Chrome（或 Edge）在不在。缺了就**直接帮用户装**；文件夹里没有 `.srt` 时还要 `whisper-cli`（Mac：`brew install ffmpeg git whisper-cpp`；能跑仓库根目录的 `install.sh` 就跑它），只有要用户本人点的（Mac 弹窗、输开机密码）才叫用户，不要假装做完。
+2. 检查 `git`、`ffmpeg`、Chrome（或 Edge）在不在。缺了就**直接帮用户装**（Mac：`brew install ffmpeg git`；Linux / Cowork / Codex 沙盒：`apt-get install -y ffmpeg git`，装不了就告诉用户缺什么；能跑仓库根目录的 `install.sh` 就跑它），只有要用户本人点的（Mac 弹窗、输开机密码）才叫用户，不要假装做完。
 
 ## 第 1 步：读文件夹 + 审错别字
 - 用户给的文件夹里有口播视频，可能有剪映导出的 `.srt`、逐字稿（`.docx/.txt/.md`）。用户也可能顺手给了：参考图、GitHub 风格链接、「用上次那个」。
-- **字幕从哪来**：有 `.srt` 就用它。没有就**直接**跑 `python3 <本skill>/scripts/transcribe.py <视频> [--script <逐字稿>] --out <用户的文件夹>`，不要叫用户去剪映电脑版导出（手机剪映导不了 SRT）。第一次要下约 550MB 的听写模型，先跟用户说一句「第一次要下听写模型，几分钟」；听写约花视频时长的一半。它生成 `字幕_自动识别.srt`，后面当 SRT 用。最后一行 `STATUS=script_mismatch` 就告诉用户逐字稿好像不是这一期，问一句要不要只用听写结果。
+- **字幕从哪来**：有 `.srt` 就用它。没有就**马上**跑 `python3 <本skill>/scripts/transcribe.py <视频> [--script <逐字稿>] --out <用户的文件夹>`，不要叫用户去剪映电脑版导出（手机剪映导不了 SRT），也不要按字数、停顿去估时间（剪辑时删过的句子会让时间差十几秒）。第一次会自动装听写引擎（约 20MB）、下模型（约 160MB，来自 GitHub），先跟用户说一句「第一次要装听写工具，两三分钟」；以后 7 分钟视频约 20 秒。它生成 `字幕_自动识别.srt`（后面当 SRT 用）和 `逐字时间.json`（每个字说出来的那一秒，第 5 步让关键词在说到的那一刻出现就查它）。最后一行 `STATUS=script_mismatch` 就告诉用户逐字稿好像不是这一期，问一句要不要只用听写结果。
 - `ffprobe` 读宽、高、帧率、时长（有 rotation 90/270 就把宽高对调再判断）。宽小于高是竖屏 9:16，宽等于高是 1:1，宽大于高是横屏 16:9。**不要问画幅。**
 - 只改错别字和听写错误，不改说法、不加标点、不动时间轴。原 SRT 不动，另存 `字幕_修正.srt`。自动听写且没有逐字稿时错字会多一些，这一步要更仔细（同音字、专有名词、数字）。对话里用小表告诉用户：时间 | 原来 | 改成。
 
@@ -106,8 +106,7 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 | 情况 | 怎么办 |
 |---|---|
 | 文件夹里没有 `.srt` | 不用停，跑 `transcribe.py`（见第 1 步）。 |
-| `transcribe.py` 报没装 whisper.cpp | 直接 `brew install whisper-cpp` 再跑。没有 brew（不是 Mac）就告诉用户这一步要 SRT。 |
-| 听写模型下载失败 | 它会自动换国内镜像；两个都失败就把原因告诉用户，等用户说「重试」。 |
+| `transcribe.py` 装引擎或下模型失败 | 多半是网络被拦（Cowork / Codex 的沙盒）。把它打印的网址告诉用户：要能访问 pypi.org、github.com、objects.githubusercontent.com，请用户在设置里放开后说「重试」。不要改用别的听写办法，也不要按字数估时间。 |
 | 没有口播视频 | 停。请用户把口播视频放进文件夹（画幅、帧率、时长都要从视频里读）。 |
 | 有好几个 `.srt`、逐字稿或视频 | 用表列出文件名和时长，让用户点一个。不要猜。 |
 | SRT 最后一句的结束时间和视频时长差 2 秒以上 | 把两个数告诉用户，问是不是同一期。用户说是再往下走。 |

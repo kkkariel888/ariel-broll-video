@@ -22,3 +22,11 @@
 - Manim：MIT，可放心用。
 - Remotion：不是 MIT，超过 3 人的盈利公司要买公司版。
 - 字体用开源的（SIL OFL）：思源黑体 / 宋体、霞鹜漫黑等，许可证文件随字体放。
+
+## 听写（2026-11-14 核验）
+| 项目 | 许可证 | 结论 |
+|---|---|---|
+| k2-fsa/sherpa-onnx（Python 包 `sherpa-onnx`） | Apache-2.0 | **采用**：`transcribe.py` 第一次运行时从 PyPI 装到用户电脑，本 skill 不带它的文件 |
+| FunAudioLLM/SenseVoice（int8 模型，sherpa-onnx 在 GitHub 发布） | FunASR 模型许可（可商用，需注明来源） | **采用**：用户电脑上现下载，模型自带 LICENSE 一起存着；本 skill 不分发模型 |
+| snakers4/silero-vad | MIT | **采用**：切分说话段，现下载 |
+| ggerganov/whisper.cpp | MIT | 试过不用：模型在 huggingface（Cowork 下载不了）、550MB、CPU 慢 |

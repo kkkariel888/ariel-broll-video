@@ -50,7 +50,6 @@ say "== 1/3 检查基础工具 =="
 need git git "git（下载工具）"
 need python3 python3 "python3"
 need ffmpeg ffmpeg "ffmpeg（剪视频工具）"
-need whisper-cli whisper-cpp "whisper.cpp（没字幕时自动听写）"
 
 chrome=""
 for p in "/Applications/Google Chrome.app" "/Applications/Microsoft Edge.app" "/Applications/Chromium.app"; do [ -d "$p" ] && chrome="$p"; done
