@@ -1,6 +1,6 @@
 ---
 name: broll-video-maker
-description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字幕就用，没有就在本机自动听写，有逐字稿还能拿来纠字，手机剪映用户不用开电脑版），自动审错别字、在侧边仿 Word 页面标黄，再从 Lemo-Opuscar 风格库（或用户的参考图 DNA、用户给的 GitHub 风格链接）挑一个风格，用这期原话画样图点一下选定，然后按这个风格给每一处标黄现画画面、逐帧审稿、对齐语速出片（B-roll 一律 4K 60 帧，不管原片多糊）。Claude 和 Codex 通用。
+description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字幕就用，没有就在本机自动听写，有逐字稿还能拿来纠字，手机剪映用户不用开电脑版），自动审错别字、在侧边仿 Word 页面标黄，再从 Lemo-Opuscar 风格库（或用户的参考图 DNA、用户给的 GitHub 风格链接）挑一个风格，用这期原话画样图点一下选定，然后按这个风格给每一处标黄现画画面、逐帧审稿、对齐语速出片（B-roll 一律 1080P 60 帧，不管原片多糊）。Claude 和 Codex 通用。
 ---
 
 # 口播配动画 B-roll（Claude / Codex 通用）
@@ -10,7 +10,7 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 本 skill 文件夹里有：
 - `scripts/highlight_server.py`：标黄 + 选风格小助手（只用 Python 自带库）
 - `scripts/lemo.py`：下载 / 更新 Lemo-Opuscar 风格库，列出能用的风格
-- `scripts/render.py`：把画面页渲染成关键帧图或视频（Python 自带库 + 本机 Chrome + ffmpeg；视频默认 4K 60 帧）
+- `scripts/render.py`：把画面页渲染成关键帧图或视频（Python 自带库 + 本机 Chrome + ffmpeg；视频默认 1080P 60 帧）
 - `scripts/transcribe.py`：没有 SRT 时在本机把口播听写成字幕，有逐字稿就用逐字稿纠字（whisper.cpp，不上传）
 - `scripts/dna.py`：参考图量主色、量剪辑节奏、查 GitHub 许可证、存进「我的风格」
 - `scripts/fonts.py`：下载风格说明里点名的开源字体
@@ -80,8 +80,8 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 - **一张一张单独发**，绝不拼成大图；图下的标注不进成片。用户点名改哪张只改哪张。全部确认前不渲染视频。确认过的存进 `已确认逐帧图/`。
 
 ## 第 6 步：对齐语速并出片
-- `render.py 逐帧代码/B3.html --size <画布尺寸> --out 成片/B3.mp4`：**不管原片多少分辨率、多少帧，B-roll 一律出最高清一档 = 4K 60 帧**（render.py 默认把画布放大 2 倍：竖屏 2160×3840、横屏 3840×2160、1:1 2160×2160；libx264 -crf 16）。不要传 `--fps <视频帧率>` 或 `--scale 1` 把它降下来。先渲染 1 段给用户看。
-- 让用户二选一：A. 只要动画片段 + 时间表，自己进剪映拼（原片零损失）；B. 直接嵌进原视频：整条按 4K 60 帧出（原片放大到 4K，原片部分不会变清楚，B-roll 部分是清楚的；libx264 -crf 16 或更低，音轨直接复制）。
+- `render.py 逐帧代码/B3.html --size <画布尺寸> --out 成片/B3.mp4`：**不管原片多少分辨率、多少帧，B-roll 一律出 1080P 60 帧**（render.py 默认就是：竖屏 1080×1920、横屏 1920×1080、1:1 1080×1080；libx264 -crf 16）。不要传 `--fps <视频帧率>` 把它降下来。用户明确要 4K 才加 `--scale 2`（慢约 2.5 倍，先告诉用户）。先渲染 1 段给用户看。
+- 让用户二选一：A. 只要动画片段 + 时间表，自己进剪映拼（原片零损失）；B. 直接嵌进原视频：整条按 1080P 60 帧出（原片低于 1080P 就放大，原片部分不会变清楚，B-roll 部分是清楚的；libx264 -crf 16 或更低，音轨直接复制）。
 - 交付前列出原片和成片的分辨率、帧率、码率。原片低于 1080P 或低于 30 帧时，顺口提醒一句：下次剪映导出口播选 1080P 以上、帧率和拍摄一致，人像部分才会清楚。
 
 ## 第 7 步：交付
@@ -99,7 +99,7 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 | 画真实品牌的界面、logo、角色，或用品牌/作品名给风格起名 | 版权风险。风格名起中性的，比如「暗色发布会」。 |
 | 把 Lemo 或 GitHub 风格的内容存进本 skill、发给别人 | 只在用户电脑上现读现用（见「版权和致谢」）。 |
 | 风格库下载失败时自己凑一个保底风格 | 没有保底风格。告诉用户原因，等用户说「重试」。 |
-| 降低画质（crf 大于 16、照原片帧率 / 分辨率出 B-roll） | B-roll 一律 4K 60 帧。 |
+| 降低画质（crf 大于 16、照原片帧率 / 分辨率出 B-roll） | B-roll 一律 1080P 60 帧。 |
 | 软件没装好却说装好了 | 要用户本人操作的（Mac 弹窗、输开机密码）就直说。 |
 
 ## 出错了怎么办（遇到就照做，不要自己绕过去）
@@ -123,7 +123,7 @@ description: 用户给一个装着口播视频的文件夹（有剪映 SRT 字�
 
 ## 画面页怎么写
 - 一个 HTML 文件，满足 Lemo 的页面约定：`window.DUR = 秒数`；`window.render = t => {…}`（同一个 t 永远画出同一张，不用定时器、不用 CSS 过渡）；字体图片加载完设 `window.READY = true`；可选 `window.KEYTIMES = [开场, 最满, 定格]`。
-- 画布尺寸只看画幅，不看原片分辨率：竖屏 1080×1920、横屏 1920×1080、1:1 1080×1080（原片 480P 也一样）。出视频时 render.py 会放大 2 倍成 4K。Canvas 2D 或 DOM 都行；**用 Canvas 必须按 `devicePixelRatio` 建画布**（`c.width = W*devicePixelRatio; ctx.scale(devicePixelRatio, devicePixelRatio)`，CSS 宽高仍是 W×H），否则 4K 会糊。可以 `import` Lemo 的工具：`/core/lib.js`（缓动、弹簧、噪声等，MIT），`render.py` 会从 `~/lemo-opuscar` 提供。
+- 画布尺寸只看画幅，不看原片分辨率：竖屏 1080×1920、横屏 1920×1080、1:1 1080×1080（原片 480P 也一样）。出视频就按这个尺寸（1080P）。Canvas 2D 或 DOM 都行；**用 Canvas 必须按 `devicePixelRatio` 建画布**（`c.width = W*devicePixelRatio; ctx.scale(devicePixelRatio, devicePixelRatio)`，CSS 宽高仍是 W×H），否则加 `--scale 2` 出 4K 时会糊。可以 `import` Lemo 的工具：`/core/lib.js`（缓动、弹簧、噪声等，MIT），`render.py` 会从 `~/lemo-opuscar` 提供。
 - 字体：照 `STYLE.md` 点名的开源字体，`python3 scripts/fonts.py copy "字体名" 逐帧代码/` 下载到页面旁边，用 `new FontFace` 加载。中文没点名就用思源黑体 / 思源宋体（Mac 一般没装，用 `fonts.py copy "Noto Sans SC"` 或 `"Noto Serif SC"` 下载）。
 - 画面里不画字幕条（字幕在剪映里统一加）；竖屏底部 1/5 不放关键内容，给字幕留位置。
 - 不画任何真实品牌的界面、logo、角色；风格说明里写了「不要用它们的名字、界面、字体」的照做。

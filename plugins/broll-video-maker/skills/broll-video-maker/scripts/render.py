@@ -12,7 +12,7 @@
 用法：
   render.py B3.html --size 1080x1920 --keyframes --label "B3 · 00:41：原话" --out 逐帧图/B3     出 开场/最满/定格 3 张
   render.py B3.html --size 1080x1920 --at 1.2 2.4 --out 逐帧图/B3                                指定时间点出图
-  render.py B3.html --size 1080x1920 --out 成片/B3.mp4                                            出视频：默认 4K（尺寸×2）60 帧，不管原片多糊
+  render.py B3.html --size 1080x1920 --out 成片/B3.mp4                                            出视频：默认 1080P 60 帧，不管原片多糊（要 4K 加 --scale 2，慢约 2.5 倍）
   render.py --compare 参考图.jpg 样图.png --out 对比.png                                            参考图和样图并排（检查有没有太像）
 可选：--keytimes 0.4,1.6,2.9（关键帧时间点；不填就读页面的 window.KEYTIMES，再不行取 25% / 60% / 结尾）
 """
@@ -198,7 +198,7 @@ def render(page, size='1080x1920', out=None, keyframes=False, at=None, keytimes=
     w, h = [int(x) for x in size.lower().split('x')]
     srv = serve(page.parent)
     url = f'http://127.0.0.1:{srv.server_address[1]}/@film/{page.name}'
-    if scale is None: scale = 1 if (keyframes or at) else 2   # 出视频默认 2 倍 = 4K；关键帧给人看，原尺寸就够
+    if scale is None: scale = 1   # 默认 1080P；--scale 2 = 4K（慢约 2.5 倍）
     cdp = CDP(find_chrome(), w, h, scale)
     tmp = tempfile.mkdtemp(prefix='broll-'); results = []
     try:
@@ -251,7 +251,7 @@ def compare(ref, ours, out):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('page', nargs='?'); ap.add_argument('--size', default='1080x1920'); ap.add_argument('--fps', type=float, default=60)
-    ap.add_argument('--scale', type=float, help='放大倍数：出视频默认 2（1080x1920 → 2160x3840 = 4K），关键帧默认 1')
+    ap.add_argument('--scale', type=float, help='放大倍数：默认 1（1080P）；2 = 4K（1080x1920 → 2160x3840），慢约 2.5 倍')
     ap.add_argument('--keyframes', action='store_true'); ap.add_argument('--at', nargs='+'); ap.add_argument('--keytimes')
     ap.add_argument('--label'); ap.add_argument('--out'); ap.add_argument('--compare', nargs=2, metavar=('参考图', '样图'))
     a = ap.parse_args()
