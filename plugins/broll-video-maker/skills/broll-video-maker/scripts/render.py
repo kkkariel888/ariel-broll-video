@@ -12,7 +12,7 @@
 用法：
   render.py B3.html --size 1080x1920 --keyframes --label "B3 · 00:41：原话" --out 逐帧图/B3     出 开场/最满/定格 3 张
   render.py B3.html --size 1080x1920 --at 1.2 2.4 --out 逐帧图/B3                                指定时间点出图
-  render.py B3.html --size 1080x1920 --fps 30 --out 成片/B3.mp4                                  出视频
+  render.py B3.html --size 1080x1920 --out 成片/B3.mp4                                            出视频：默认 1080P 60 帧，不管原片多糊（要 4K 加 --scale 2，慢约 2.5 倍）
   render.py --compare 参考图.jpg 样图.png --out 对比.png                                            参考图和样图并排（检查有没有太像）
 可选：--keytimes 0.4,1.6,2.9（关键帧时间点；不填就读页面的 window.KEYTIMES，再不行取 25% / 60% / 结尾）
 """
@@ -61,8 +61,8 @@ def serve(folder):
 
 # ---------- 极简 WebSocket + Chrome 调试协议 ----------
 class CDP:
-    def __init__(self, chrome, w, h):
-        self.errors = []
+    def __init__(self, chrome, w, h, scale=1):
+        self.errors = []; self.scale = scale
         self.tmp = tempfile.mkdtemp(prefix='broll-chrome-')
         args = [chrome, '--headless=new', '--disable-gpu', '--hide-scrollbars', '--no-first-run', '--no-default-browser-check',
                 '--mute-audio', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings',
@@ -146,7 +146,7 @@ class CDP:
         return r.get('result', {}).get('value')
 
     def size(self, w, h):
-        self.call('Emulation.setDeviceMetricsOverride', width=w, height=h, deviceScaleFactor=1, mobile=False)
+        self.call('Emulation.setDeviceMetricsOverride', width=w, height=h, deviceScaleFactor=self.scale, mobile=False)
 
     def shot(self, w, h):
         return base64.b64decode(self.call('Page.captureScreenshot', format='png', fromSurface=True, captureBeyondViewport=False,
@@ -192,13 +192,14 @@ font:500 {fs}px "Source Han Sans SC","Noto Sans CJK SC","PingFang SC","Microsoft
     out = cdp.shot(w, h + LABEL_H); cdp.size(w, h)
     return out
 
-def render(page, size='1080x1920', out=None, keyframes=False, at=None, keytimes=None, fps=30, label=None, quiet=False):
+def render(page, size='1080x1920', out=None, keyframes=False, at=None, keytimes=None, fps=60, label=None, quiet=False, scale=None):
     page = pathlib.Path(page).resolve()
     if not page.exists(): sys.exit(f'找不到画面页：{page}')
     w, h = [int(x) for x in size.lower().split('x')]
     srv = serve(page.parent)
     url = f'http://127.0.0.1:{srv.server_address[1]}/@film/{page.name}'
-    cdp = CDP(find_chrome(), w, h)
+    if scale is None: scale = 1   # 默认 1080P；--scale 2 = 4K（慢约 2.5 倍）
+    cdp = CDP(find_chrome(), w, h, scale)
     tmp = tempfile.mkdtemp(prefix='broll-'); results = []
     try:
         cdp.call('Runtime.enable'); cdp.call('Page.enable'); cdp.size(w, h)
@@ -249,7 +250,8 @@ def compare(ref, ours, out):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('page', nargs='?'); ap.add_argument('--size', default='1080x1920'); ap.add_argument('--fps', type=float, default=30)
+    ap.add_argument('page', nargs='?'); ap.add_argument('--size', default='1080x1920'); ap.add_argument('--fps', type=float, default=60)
+    ap.add_argument('--scale', type=float, help='放大倍数：默认 1（1080P）；2 = 4K（1080x1920 → 2160x3840），慢约 2.5 倍')
     ap.add_argument('--keyframes', action='store_true'); ap.add_argument('--at', nargs='+'); ap.add_argument('--keytimes')
     ap.add_argument('--label'); ap.add_argument('--out'); ap.add_argument('--compare', nargs=2, metavar=('参考图', '样图'))
     a = ap.parse_args()
@@ -257,7 +259,7 @@ def main():
         return compare(a.compare[0], a.compare[1], a.out or '对比.png')
     if not a.page: ap.error('要给画面页，比如 B3.html')
     fps = int(a.fps) if float(a.fps).is_integer() else a.fps
-    for r in render(a.page, a.size, a.out, a.keyframes, a.at, a.keytimes, fps, a.label):
+    for r in render(a.page, a.size, a.out, a.keyframes, a.at, a.keytimes, fps, a.label, scale=a.scale):
         print(r)
 
 if __name__ == '__main__':
