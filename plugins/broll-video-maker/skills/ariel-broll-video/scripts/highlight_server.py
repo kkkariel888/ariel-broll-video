@@ -329,7 +329,7 @@ class Project:
         return slug
 
 
-PLAYER = """<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:#000;overflow:hidden;height:100%}
+PLAYER = """<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:#141413;overflow:hidden;height:100%;width:100%}
 #w{position:absolute;left:50%;top:50%;transform-origin:0 0}iframe{border:0;display:block}</style>
 <div id="w"><iframe id="f" scrolling="no"></iframe></div><script>
 const q=new URLSearchParams(location.search),[W,H]=(q.get('s')||'1080x1920').split('x').map(Number),f=document.getElementById('f'),w=document.getElementById('w');
