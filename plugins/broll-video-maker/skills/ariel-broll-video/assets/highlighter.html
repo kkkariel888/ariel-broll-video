@@ -434,6 +434,19 @@ html,body{overflow-anchor:none}
 .lb .cap.sub .sbt{font-size:clamp(11px,1.6vh,15px);padding:3px 12px;margin-left:12px}
 .lb .cap.sub .sbx{font-size:clamp(14px,2.4vh,22px);padding:.5em .8em;border-width:2.5px;border-radius:10px;-webkit-line-clamp:unset}
 .lb img{max-height:86vh}
+/* 1.6.5：图为主、字为辅；一行几张按格式和屏宽自动定 */
+.wall,#rvBoards .wall{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+#rvBoards.wide .wall{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+#rvBoards.square .wall{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.wall .fr .im .sub{left:5%;right:5%;bottom:3.5%}
+.sub .sbt{font-size:9.5px;padding:0 5px;margin-left:5px;font-weight:600}
+.sub .sbx{font-size:11px;line-height:1.35;padding:3px 6px;border-width:1.5px;font-weight:500}
+.sub .sbx .no{font-weight:800;margin-right:5px}
+.wall .fr.p0 .sub .sbx .no{color:var(--accent)}
+@media(max-width:700px){.wall,#rvBoards .wall,#rvBoards.wide .wall{grid-template-columns:repeat(2,minmax(0,1fr))}#rvBoards:not(.wide) .wall{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* 放大图：字也别太大 */
+.lb .cap.sub .sbt{font-size:clamp(10px,1.4vh,13px);padding:2px 10px;margin-left:10px}
+.lb .cap.sub .sbx{font-size:clamp(12px,1.9vh,17px);padding:.45em .75em;border-width:2px}
 @media (max-width:520px){
   .grp{padding:0 4px}
   .tb{min-width:36px;padding:4px 3px}.tb small{font-size:10px}
@@ -779,6 +792,7 @@ function show(v){
   window.scrollTo(0,0); setCompact();
   drawTray();
   if(v==="style") requestAnimationFrame(fitGrid);
+  if(v==="review") requestAnimationFrame(fitSubs);
 }
 // 标黄页往下滑超过一点，顶上收成细栏；滑回顶部才展开（两个阈值，避免来回抖）
 function setCompact(){ const y=scrollY, c=document.body.classList.contains("compact");
@@ -986,7 +1000,7 @@ $("cmpBack").addEventListener("click",()=>{CMP=false; drawCmp(); drawTray(); req
 let lbI=0;
 function openLB(i){lbI=i; const x=LB[i]; if(!x) return; $("lbImg").src=x.src;
   const c=$("lbCap"); c.classList.toggle("sub",!!x.tag);
-  if(x.tag) c.innerHTML=`<span class="sbt">${esc(x.tag)}</span><span class="sbx">${esc(x.txt)}</span>`;
+  if(x.tag) c.innerHTML=`<span class="sbt">${esc(x.tag)}</span><span class="sbx"><b class="no">${x.n}</b>${esc(x.txt)}</span>`;
   else c.textContent=x.cap+"　（"+(i+1)+"/"+LB.length+"）";
   $("lb").classList.add("on");}
 $("lb").addEventListener("click",e=>{ if(e.target.classList.contains("prev")) openLB((lbI-1+LB.length)%LB.length);
@@ -1001,17 +1015,30 @@ function drawReview(){
   $("rvHint").innerHTML=R.note?esc(R.note):rows.length?`一张图配一句口播，按顺序编号 1～${total}。<span class="p0dot">橙色编号</span>是新一段的开头：你标了 ${rows.length} 段，出片就是 ${rows.length} 段视频。`:"";
   $("approveAll").disabled=!rows.length||R.approved;
   $("approveAll").textContent=R.approved?"已确认，正在出片…":"没问题，出片 ▶";
-  $("rvBoards").classList.toggle("wide",W>=H);
+  $("rvBoards").classList.toggle("wide",W>H); $("rvBoards").classList.toggle("square",W===H);
   const key=JSON.stringify([rows.map(r=>[r.no,r.text,r.time,r.frames]),R.size]);
   if(key===rvKey) return; rvKey=key;
   LBS.rv.length=0; let n=0, h="";
   rows.forEach((r,i)=>r.frames.forEach((f,k)=>{ n++;
-    const txt=f.text||(k===0?r.text:""), tag=`${n}　第${i+1}段${f.time?"　"+f.time:""}`;   // 只写：编号　第几段　时间
-    LBS.rv.push({src:f.src,cap:`${tag}　${txt}`,tag,txt});
+    const txt=f.text||(k===0?r.text:""), tag=`第${i+1}段${f.time?"　"+f.time:""}`;   // 标签：第几段　时间；编号放进字幕框开头
+    LBS.rv.push({src:f.src,cap:`${n}　${tag}　${txt}`,tag,txt,n});
     h+=`<div class="fr${k===0?" p0":""}" data-lb="${LBS.rv.length-1}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy">
-      <div class="sub"><span class="sbt">${esc(tag)}</span><span class="sbx">${esc(txt)}</span></div></div></div>`; }));
+      <div class="sub"><span class="sbt">${esc(tag)}</span><span class="sbx"><b class="no">${n}</b>${esc(txt)}</span></div></div></div>`; }));
   $("rvBoards").innerHTML=`<div class="wall">${h}</div>`;
+  requestAnimationFrame(fitSubs);
 }
+// 字幕框跟着句子长短自动缩字：框最多占图片高度的 1/5（横屏图矮，放宽到 1/3）；缩到最小还放不下才截断（点开大图看全句）
+function fitSubs(){
+  const wide=$("rvBoards").classList.contains("wide");
+  document.querySelectorAll("#rvBoards .im").forEach(im=>{
+    const box=im.querySelector(".sbx"); if(!box) return;
+    const w=im.clientWidth, maxH=im.clientHeight*(wide?0.34:0.2);
+    let fs=Math.max(9,Math.min(13,w*0.068)); box.style.webkitLineClamp="unset"; box.style.fontSize=fs+"px";
+    while(box.offsetHeight>maxH&&fs>8){ fs-=0.5; box.style.fontSize=fs+"px"; }
+    if(box.offsetHeight>maxH){ const lh=fs*1.35; box.style.webkitLineClamp=String(Math.max(1,Math.floor((maxH-8)/lh))); }
+  });
+}
+addEventListener("resize",()=>{ if(view==="review") fitSubs(); });
 $("rvBoards").addEventListener("click",e=>{const lb=e.target.closest("[data-lb]"); if(lb){LB=LBS.rv; openLB(+lb.dataset.lb);}});
 $("approveAll").addEventListener("click",async()=>{ $("approveAll").disabled=true; await act({act:"approve_all"});
   setStatus("好，开始出片：一段标黄出一段视频，好了出现在「④ 成片」。",true); });
