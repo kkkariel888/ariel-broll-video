@@ -590,6 +590,7 @@ async function save(){
 // ---------------- 选风格 / 审稿 / 成片 ----------------
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 let ST=null, bmode=null, view="doc", seen={}, pollTimer=null;
+const VIEWS=["doc","style","review","out"], LOAD_HASH=location.hash.replace("#","");  // 打开页面那一刻网址里的页签
 const $=id=>document.getElementById(id);
 async function act(body){
   const r=await fetch("api/act",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -828,14 +829,14 @@ function draw(){
   }
   const nReady=ST.styles.rows.filter(r=>r.ready).length; $("bStyle").hidden=!nReady; $("bStyle").textContent=nReady;
   $("bReview").hidden=!ST.review.rows.length; $("bReview").textContent=ST.review.rows.length;
-  // 页签导航：优先尊重 URL hash 或用户点击；仅在无 hash 时按阶段自动跳
-  const hash = location.hash.replace("#","");
-  if(hash && ["doc","style","review","out"].includes(hash)){
-    if(view !== hash) show(hash);
-  } else {
-    const stage=!confirmed?null:tabs.out&&ST.outputs.clips.length?"out":tabs.review&&ST.chosen?"review":(confirmed&&nReady?"style":null);
-    if(stage&&seen.stage!==stage){seen.stage=stage; show(stage);}
-  }
+  // 页签导航：进入新阶段就自动跳过去；刷新页面时先停在网址里的那一页（#review 等）。
+  // 注意 show() 自己也会写网址 #doc，所以不能把「网址里有 #」当成用户选的，否则永远不自动跳。
+  const stage=!confirmed?null:tabs.out&&ST.outputs.clips.length?"out":tabs.review&&ST.chosen?"review":(confirmed&&nReady?"style":null);
+  if(seen.stage===undefined){
+    seen.stage=stage;
+    if(VIEWS.includes(LOAD_HASH)){ if(view!==LOAD_HASH) show(LOAD_HASH); }
+    else if(stage) show(stage);
+  } else if(stage&&seen.stage!==stage){seen.stage=stage; show(stage);}
 }
 async function poll(){ try{ const r=await fetch("api/all",{cache:"no-store"}); if(r.ok){ST=await r.json(); draw();} }catch(e){} }
 function startPoll(){ if(pollTimer) return; poll(); pollTimer=setInterval(poll,1500); }
