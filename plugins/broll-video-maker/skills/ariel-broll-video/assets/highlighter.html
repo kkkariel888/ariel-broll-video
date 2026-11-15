@@ -113,7 +113,8 @@ body{background:var(--bg-desk);color:var(--text-main);font-family:var(--font-san
 .tabs{display:flex;gap:4px;padding:6px 16px 0;font-size:13.5px;color:var(--text-muted);overflow-x:auto;white-space:nowrap}
 .tabs button{font:inherit;font-size:13.5px;font-weight:500;border:none;background:transparent;color:var(--text-muted);padding:7px 14px;cursor:pointer;border-radius:var(--radius-sm) var(--radius-sm) 0 0;border-bottom:2px solid transparent;transition:all .15s ease}
 .tabs button:hover:not(:disabled){color:var(--text-main);background:color-mix(in srgb,var(--accent-light) 50%,transparent)}
-.tabs button.on{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-light);font-weight:600}
+.tabs button.on,.tabs button.on:hover:not(:disabled){color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-light);font-weight:600}
+#v-style .panel{max-width:none;padding-left:20px;padding-right:20px}   /* 选风格页用满屏宽，9 张图才放得大 */
 .tabs button:disabled{opacity:.4;cursor:default}
 .tabs em{font-style:normal;font-size:11px;background:var(--accent);color:#fff;border-radius:10px;padding:1px 6px;margin-left:5px;font-weight:600}
 
@@ -215,7 +216,7 @@ h2{font-family:var(--font-serif);font-size:15px;color:var(--text-muted);font-wei
 .grid .rowh.chosen b::after{content:"  ✓ 已选";color:var(--accent);font-size:12px}
 .grid.b .rowh .big{padding:6px 12px;margin-top:4px}
 .cell i{position:absolute;top:4px;left:6px;font-size:11.5px;color:#fff;text-shadow:0 0 3px #000;background:rgba(0,0,0,.45);padding:1px 5px;border-radius:4px}
-.cell{position:relative;flex:none;background:#141413;border-radius:var(--radius-sm);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:zoom-in;border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:all .15s ease}
+.cell{position:relative;flex:none;background:#141413;border-radius:var(--radius-sm);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:zoom-in;border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:transform .15s ease,border-color .15s ease}
 .cell:hover{transform:translateY(-1px);border-color:var(--accent)}
 .cell img{display:block;width:100%;height:100%;object-fit:contain}
 .cell.wait{cursor:default;color:#aaa;font-size:12px;background:repeating-linear-gradient(45deg,#1f1e1c 0 8px,#2b2a27 8px 16px)}
@@ -605,7 +606,7 @@ function show(v){
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); 
   if(location.hash!=="#"+v) history.replaceState(null,"","#"+v);
   window.scrollTo(0,0); 
-  if(v==="style") fitGrid();
+  if(v==="style") requestAnimationFrame(fitGrid);
 }
 $("tabs").addEventListener("click",e=>{const b=e.target.closest("button"); if(b&&!b.disabled) show(b.dataset.v);});
 
@@ -637,16 +638,28 @@ function drawMode(){
 /* 3×3 样图墙（Requirement 2） */
 const LBS={style:[],rv:[]}; let LB=LBS.style;
 function fitGrid(){
-  const g=$("grid"); if(!ST||!g.childElementCount) return;
+  const g=$("grid"); if(!ST||!g.childElementCount||!g.offsetParent) return;   // 没显示出来时量不到尺寸，等切到这一页再算
   const n=g.children.length, [W,H]=(ST.review.size||"1080x1920").split("x").map(Number), ar=W/H, gap=8;
   const top=g.getBoundingClientRect().top, availH=Math.max(260,innerHeight-top-64), Wg=g.clientWidth;
   const hA=Math.min((Wg-220-2*gap)/3/ar, availH/n-10);
   const k=Math.min(n,3), lines=Math.ceil(n/k), wB=(Wg-(k-1)*20-k*2*gap)/(3*k);
   const hB=Math.min(wB/ar, availH/lines-88);
-  const useB=hB>hA*1.08, h=Math.max(90,useB?hB:hA), w=h*ar;
-  g.className="grid "+(useB?"b":"a");
-  g.querySelectorAll(".cell").forEach(c=>{c.style.height=Math.floor(h)+"px";c.style.width=Math.floor(w)+"px";});
-  if(useB) g.querySelectorAll(".rowh").forEach(r=>r.style.width=Math.floor(3*w+2*gap)+"px"); else g.querySelectorAll(".rowh").forEach(r=>r.style.width="");
+  // 先按公式估，再按页面实际量出来的底边往回缩（卡片的内边距、边框、行间距公式里算不全），保证 9 张一屏看完
+  const apply=(b,h)=>{const w=h*ar; g.className="grid "+(b?"b":"a");
+    g.querySelectorAll(".cell").forEach(c=>{c.style.height=Math.floor(h)+"px";c.style.width=Math.floor(w)+"px";});
+    g.querySelectorAll(".rowh").forEach(r=>r.style.width=b?Math.floor(3*w+2*gap)+"px":"");};
+  const ok=()=>{let bot=0,right=0; g.querySelectorAll(".sblk,.cell").forEach(e=>{const r=e.getBoundingClientRect(); bot=Math.max(bot,r.bottom); right=Math.max(right,r.right);});
+    return bot<=innerHeight-12&&right<=g.getBoundingClientRect().right+1;};
+  const fit=(b,hi)=>{let lo=90; hi=Math.max(90,hi); apply(b,hi); if(ok()) return hi;   // 二分找「放得下的最大尺寸」
+    for(let i=0;i<9;i++){const m=(lo+hi)/2; apply(b,m); if(ok()) lo=m; else hi=m;} return lo;};
+  if(innerWidth<700){   // 手机：一屏放不下 9 张，改成每行 3 张撑满卡片宽度，往下滑着看
+    const okW=()=>[...g.querySelectorAll(".cell")].every(c=>{const r=c.getBoundingClientRect(), p=c.parentElement.querySelector(".cell").getBoundingClientRect();
+      return Math.abs(r.top-p.top)<2&&r.right<=(c.closest(".sblk")||g).getBoundingClientRect().right-12;});   // 同一行、不出卡片
+    let lo=60,hi=Wg/3/ar; for(let i=0;i<9;i++){const m=(lo+hi)/2; apply(false,m); if(okW()) lo=m; else hi=m;}
+    apply(false,lo); return;
+  }
+  const wA=(Wg-220-2*gap)/3/ar, a=fit(false,Math.min(wA,availH)), b=fit(true,Math.min(wB/ar,availH));
+  if(a>=b) apply(false,a); else apply(true,b);
 }
 addEventListener("resize",fitGrid);
 const sent=x=>typeof x==="string"?x:((x||{}).text||"");

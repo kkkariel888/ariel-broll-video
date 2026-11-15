@@ -330,13 +330,15 @@ class Project:
 
 
 PLAYER = """<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:#141413;overflow:hidden;height:100%;width:100%}
-#w{position:absolute;left:50%;top:50%;transform-origin:0 0}iframe{border:0;display:block}</style>
-<div id="w"><iframe id="f" scrolling="no"></iframe></div><script>
+#w{position:absolute;left:50%;top:50%;transform-origin:0 0}iframe{border:0;display:block}
+#msg{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:12px;color:#e8e6dc;font:13px/1.6 -apple-system,sans-serif;text-align:center}</style>
+<div id="w"><iframe id="f" scrolling="no"></iframe></div><div id="msg">动画没加载出来（这一段的画图工具缺了）。<br>关键帧图是对的，可以先看左边；回对话说一声「动画打不开」就好。</div><script>
 const q=new URLSearchParams(location.search),[W,H]=(q.get('s')||'1080x1920').split('x').map(Number),f=document.getElementById('f'),w=document.getElementById('w');
 f.width=W;f.height=H;f.src='@film/'+q.get('p');
 function fit(){const k=Math.min(innerWidth/W,innerHeight/H);w.style.transform=`scale(${k}) translate(-50%,-50%)`;}
 addEventListener('resize',fit);fit();
 f.onload=()=>{const g=f.contentWindow,t0=performance.now();
+ setTimeout(()=>{try{if(typeof g.render!=='function'){document.getElementById('msg').style.display='flex';}}catch(e){}},6000);
  (function loop(){try{if(g.READY!==false&&typeof g.render==='function'){const d=Number(g.DUR)||3;g.render(((performance.now()-t0)/1000)%d);}}catch(e){}
  requestAnimationFrame(loop);})();};
 </script>"""
