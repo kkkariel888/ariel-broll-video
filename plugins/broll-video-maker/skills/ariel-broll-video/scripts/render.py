@@ -165,7 +165,8 @@ class CDP:
         self.call('Emulation.setDeviceMetricsOverride', width=w, height=h, deviceScaleFactor=self.scale, mobile=False)
 
     def shot(self, w, h):
-        return base64.b64decode(self.call('Page.captureScreenshot', format='png', fromSurface=True, captureBeyondViewport=False,
+        return base64.b64decode(self.call('Page.captureScreenshot', format='png', optimizeForSpeed=True,
+                                          fromSurface=True, captureBeyondViewport=False,
                                           clip={'x': 0, 'y': 0, 'width': w, 'height': h, 'scale': 1})['data'])
 
     def goto(self, url, wait_ready=True):
