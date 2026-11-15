@@ -1,0 +1,50 @@
+{
+  "id": "own_srt",
+  "name": "自带字幕和逐字稿",
+  "covers": [
+    "own_srt"
+  ],
+  "start_from": "checkpoints/with_srt",
+  "request": "帮我给这个文件夹里的口播视频配 B-roll，字幕和逐字稿都在里面",
+  "page_script": null,
+  "env": {
+    "BROLL_HOME": "$UX_CACHE/broll-home",
+    "LEMO_OPUSCAR_HOME": "$UX_CACHE/lemo-opuscar",
+    "LEMO_MY_STYLES": "$RUN/_home/my-styles"
+  },
+  "steps": [
+    {
+      "id": "first_reply",
+      "name": "第一句",
+      "budget_s": 10
+    },
+    {
+      "id": "page_open",
+      "name": "页面打开",
+      "budget_s": 60
+    }
+  ],
+  "total_budget_s": 180,
+  "stop_after": "page_open",
+  "watch": [
+    "plugins/broll-video-maker/skills/ariel-broll-video/SKILL.md"
+  ],
+  "criteria": [
+    {
+      "type": "step_within",
+      "step": "page_open",
+      "weight": 2
+    },
+    {
+      "type": "file_glob",
+      "path": ".broll/字幕_自动识别.srt",
+      "max": 0,
+      "weight": 2
+    },
+    {
+      "type": "file_glob",
+      "path": ".broll/字幕_修正.srt",
+      "min": 1
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "codex",
+  "name": "Codex 里能装、能开工、能开页面",
+  "covers": [
+    "codex"
+  ],
+  "start_from": "checkpoints/transcribed",
+  "executor": "codex",
+  "executor_note": "用 codex exec 在临时文件夹里跑：先读本仓库的 SKILL.md，照着做到页面打开为止，把页面地址打出来。",
+  "request": "帮我给这个文件夹里的口播视频配 B-roll",
+  "page_script": null,
+  "env": {
+    "BROLL_HOME": "$UX_CACHE/broll-home",
+    "LEMO_OPUSCAR_HOME": "$UX_CACHE/lemo-opuscar",
+    "LEMO_MY_STYLES": "$RUN/_home/my-styles"
+  },
+  "steps": [
+    {
+      "id": "page_open",
+      "name": "页面打开",
+      "budget_s": 180
+    }
+  ],
+  "total_budget_s": 300,
+  "stop_after": "page_open",
+  "watch": [
+    "plugins/broll-video-maker/skills/ariel-broll-video/**",
+    "plugins/broll-video-maker/.codex-plugin/**"
+  ],
+  "criteria": [
+    {
+      "type": "step_within",
+      "step": "page_open",
+      "weight": 2
+    },
+    {
+      "type": "said",
+      "pattern": "http://127.0.0.1:\\d+"
+    }
+  ]
+}

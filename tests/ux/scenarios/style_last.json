@@ -1,0 +1,65 @@
+{
+  "id": "style_last",
+  "name": "风格从哪来：用上次那个",
+  "covers": [
+    "style_last"
+  ],
+  "start_from": "checkpoints/last_style",
+  "request": "口播配 B-roll，风格用上次那个",
+  "answers": {
+    "要不要存进我的风格": "不用",
+    "其他任何问题": "按你觉得最好的来"
+  },
+  "page_script": null,
+  "env": {
+    "BROLL_HOME": "$RUN/_home",
+    "LEMO_OPUSCAR_HOME": "$UX_CACHE/lemo-opuscar",
+    "LEMO_MY_STYLES": "$RUN/_home/my-styles"
+  },
+  "setup": [
+    "mkdir -p \"$UX_CACHE/broll-home/fonts\" \"$UX_CACHE/broll-home/kits\"",
+    "ln -s \"$UX_CACHE/broll-home/fonts\" \"$RUN/_home/fonts\"",
+    "ln -s \"$UX_CACHE/broll-home/kits\" \"$RUN/_home/kits\"",
+    "python3 -c \"import os,json;p=os.path.expandvars('$RUN/_home/last.json');d=json.load(open(p));d['style_md']=os.path.expandvars(d['style_md']);json.dump(d,open(p,'w'),ensure_ascii=False)\""
+  ],
+  "steps": [
+    {
+      "id": "first_reply",
+      "name": "第一句",
+      "budget_s": 10
+    },
+    {
+      "id": "review_ready",
+      "name": "直接跳到画正式画面、审稿表出齐",
+      "budget_s": 420
+    }
+  ],
+  "total_budget_s": 600,
+  "stop_after": "review_ready",
+  "watch": [
+    "plugins/broll-video-maker/skills/ariel-broll-video/SKILL.md",
+    "plugins/broll-video-maker/skills/ariel-broll-video/scripts/dna.py",
+    "plugins/broll-video-maker/skills/ariel-broll-video/scripts/lemo.py",
+    "plugins/broll-video-maker/skills/ariel-broll-video/scripts/card.py",
+    "plugins/broll-video-maker/skills/ariel-broll-video/references/**"
+  ],
+  "criteria": [
+    {
+      "type": "file_glob",
+      "path": ".broll/风格选择.json",
+      "min": 1,
+      "weight": 2
+    },
+    {
+      "type": "json_check",
+      "path": ".broll/风格选择.json",
+      "expr": "slug == 'bauhaus-shapes'",
+      "weight": 2
+    },
+    {
+      "type": "file_glob",
+      "path": ".broll/风格样图/*.png",
+      "max": 0
+    }
+  ]
+}

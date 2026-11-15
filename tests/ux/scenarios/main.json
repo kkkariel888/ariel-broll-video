@@ -1,0 +1,137 @@
+{
+  "id": "main",
+  "name": "主路线：从头到尾出片",
+  "covers": [
+    "main",
+    "first_reply",
+    "doorbell",
+    "grid_one_screen",
+    "clean_folder"
+  ],
+  "start_from": null,
+  "request": "帮我给这个文件夹里的口播视频配 B-roll",
+  "answers": {
+    "要不要存进我的风格": "不用",
+    "其他任何问题": "按你觉得最好的来"
+  },
+  "page_script": "tests/ux/page.json",
+  "env": {
+    "BROLL_HOME": "$UX_CACHE/broll-home",
+    "LEMO_OPUSCAR_HOME": "$UX_CACHE/lemo-opuscar",
+    "LEMO_MY_STYLES": "$RUN/_home/my-styles"
+  },
+  "steps": [
+    {
+      "id": "first_reply",
+      "name": "AI 第一句回应",
+      "budget_s": 10
+    },
+    {
+      "id": "page_open",
+      "name": "标黄页面打开",
+      "budget_s": 150
+    },
+    {
+      "id": "mode_chosen",
+      "name": "用户选了文字多 / 动画多"
+    },
+    {
+      "id": "samples_ready",
+      "name": "9 张风格样图出齐",
+      "from": "mode_chosen",
+      "budget_s": 150
+    },
+    {
+      "id": "style_picked",
+      "name": "用户选定风格"
+    },
+    {
+      "id": "review_ready",
+      "name": "审稿表出齐",
+      "from": "style_picked",
+      "budget_s": 360
+    },
+    {
+      "id": "all_approved",
+      "name": "用户点了全部通过"
+    },
+    {
+      "id": "done",
+      "name": "成片放进 B-roll成片/",
+      "from": "all_approved",
+      "budget_s": 120
+    }
+  ],
+  "limits": {
+    "first_feedback_s": 10,
+    "silent_wait_s": 45,
+    "click_response_s": 5,
+    "user_clicks": 12,
+    "user_messages": 2,
+    "asks": 2
+  },
+  "total_budget_s": 900,
+  "watch": [
+    "plugins/broll-video-maker/skills/ariel-broll-video/**"
+  ],
+  "criteria": [
+    {
+      "type": "step_within",
+      "step": "first_reply",
+      "weight": 1
+    },
+    {
+      "type": "step_within",
+      "step": "page_open",
+      "weight": 1
+    },
+    {
+      "type": "step_within",
+      "step": "samples_ready",
+      "weight": 2
+    },
+    {
+      "type": "step_within",
+      "step": "review_ready",
+      "weight": 2
+    },
+    {
+      "type": "step_within",
+      "step": "done",
+      "weight": 2
+    },
+    {
+      "type": "page_check",
+      "name": "9 张样图一屏看完",
+      "weight": 1
+    },
+    {
+      "type": "file_glob",
+      "path": "B-roll成片/*.mp4",
+      "min": 3,
+      "weight": 2
+    },
+    {
+      "type": "folder_only",
+      "allow": [
+        "口播.mp4",
+        "B-roll成片/*.mp4"
+      ],
+      "weight": 1
+    },
+    {
+      "type": "max_count",
+      "what": "user_clicks",
+      "max": 12
+    },
+    {
+      "type": "max_count",
+      "what": "asks",
+      "max": 2
+    },
+    {
+      "type": "not_said",
+      "pattern": "Traceback|报错原文"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+[
+  {"wait_count": "#grid .cell img", "n": 9, "timeout": 60},
+  {"click": "再来 3 个风格", "react": 5},
+  {"step": "more_asked"},
+  {"wait_count": "#grid .cell img", "n": 18, "timeout": 300},
+  {"step": "more_ready"},
+  {"all_in_view": "#grid .cell", "name": "18 张样图一屏看完"},
+  {"shot": "再来3个"}
+]

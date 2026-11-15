@@ -1,0 +1,51 @@
+{
+  "id": "more",
+  "name": "选风格时「再来 3 个」",
+  "covers": [
+    "more_styles"
+  ],
+  "start_from": "checkpoints/samples_ready",
+  "needs": "主路线跑完后用 save_checkpoint.py 存的 samples_ready 存档",
+  "request": "（接着上次：页面已经开着，9 张样图已出齐。按页面门铃继续做）",
+  "page_script": "tests/ux/page_more.json",
+  "env": {
+    "BROLL_HOME": "$UX_CACHE/broll-home",
+    "LEMO_OPUSCAR_HOME": "$UX_CACHE/lemo-opuscar",
+    "LEMO_MY_STYLES": "$RUN/_home/my-styles"
+  },
+  "steps": [
+    {
+      "id": "more_asked",
+      "name": "点了再来 3 个"
+    },
+    {
+      "id": "more_ready",
+      "name": "18 张出齐",
+      "from": "more_asked",
+      "budget_s": 180
+    }
+  ],
+  "total_budget_s": 300,
+  "watch": [
+    "plugins/broll-video-maker/skills/ariel-broll-video/SKILL.md",
+    "plugins/broll-video-maker/skills/ariel-broll-video/assets/highlighter.html"
+  ],
+  "criteria": [
+    {
+      "type": "step_within",
+      "step": "more_ready",
+      "weight": 2
+    },
+    {
+      "type": "json_check",
+      "path": ".broll/风格排名.json",
+      "expr": "len(candidates) >= 6",
+      "weight": 2
+    },
+    {
+      "type": "page_check",
+      "name": "18 张样图一屏看完"
+    }
+  ],
+  "executor_note": "临时文件夹里已经有中间结果（.broll/ 里的文件）。先照 SKILL.md 第 2 步把页面开起来（用已有的 字幕_修正.srt，不重新听写、不重挑标黄），再跑门铃，从 第 3 步的「more」（再来 3 个）那里接着做。"
+}

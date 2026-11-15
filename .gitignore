@@ -2,3 +2,6 @@
 __pycache__/
 .env
 node_modules/
+# 测试存档：主路线跑完后由 tests/ux/save_checkpoint.py 生成（有大图，不进仓库）
+tests/ux/checkpoints/samples_ready/
+tests/ux/checkpoints/review_ready/

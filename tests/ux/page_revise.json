@@ -1,0 +1,9 @@
+[
+  {"wait_count": "#rvBody .fr img", "n": 9, "timeout": 60},
+  {"type": "#rvBody textarea", "text": "字太小，数字换成红色"},
+  {"click": "要改", "react": 5},
+  {"step": "revise_sent"},
+  {"wait": "B1", "timeout": 30},
+  {"sleep": 120},
+  {"shot": "改完"}
+]
