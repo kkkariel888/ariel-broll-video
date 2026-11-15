@@ -415,6 +415,13 @@ html,body{overflow-anchor:none}
 .wall .fr .cap .tx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .wall .fr .cap .tm{font-size:10px}
 .p0dot{color:#fff;background:var(--accent);border-radius:4px;padding:0 5px;font-size:12px}
+/* 1.6.2：一行固定 6 张（横屏 4 张、手机 3 张），口播直接写在图片下部 */
+.wall,#rvBoards.wide .wall{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+#rvBoards.wide .wall{grid-template-columns:repeat(4,minmax(0,1fr))}
+.wall .fr .im .cap{position:absolute;left:0;right:0;bottom:0;padding:22px 7px 6px;background:linear-gradient(to top,rgba(0,0,0,.82) 55%,rgba(0,0,0,0));color:#fff;font-size:12px;line-height:1.45}
+.wall .fr .im .cap .tm{display:block;font-size:10.5px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums}
+.wall .fr .im .cap .tx{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+@media(max-width:700px){.wall,#rvBoards.wide .wall{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:520px){
   .grp{padding:0 4px}
   .tb{min-width:36px;padding:4px 3px}.tb small{font-size:10px}
@@ -984,8 +991,8 @@ function drawReview(){
   LBS.rv.length=0; let n=0, h="";
   rows.forEach((r,i)=>r.frames.forEach((f,k)=>{ n++;
     const txt=f.text||(k===0?r.text:""); LBS.rv.push({src:f.src,cap:`${n} · ${f.time||""}　${txt}`});
-    h+=`<div class="fr${k===0?" p0":""}" data-lb="${LBS.rv.length-1}" title="第 ${i+1} 段 · ${esc(r.time||"")}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy"><span class="k">${n}</span></div>
-      <div class="cap"><span class="tx"><span class="tm">${esc(f.time||"")}</span> ${esc(txt)}</span></div></div>`; }));
+    h+=`<div class="fr${k===0?" p0":""}" data-lb="${LBS.rv.length-1}" title="第 ${i+1} 段 · ${esc(r.time||"")}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy"><span class="k">${n}</span>
+      <div class="cap"><span class="tm">${esc(f.time||"")}</span><span class="tx">${esc(txt)}</span></div></div></div>`; }));
   $("rvBoards").innerHTML=`<div class="wall">${h}</div>`;
 }
 $("rvBoards").addEventListener("click",e=>{const lb=e.target.closest("[data-lb]"); if(lb){LB=LBS.rv; openLB(+lb.dataset.lb);}});
