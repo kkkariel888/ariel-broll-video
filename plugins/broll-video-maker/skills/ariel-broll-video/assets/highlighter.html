@@ -986,7 +986,7 @@ $("cmpBack").addEventListener("click",()=>{CMP=false; drawCmp(); drawTray(); req
 let lbI=0;
 function openLB(i){lbI=i; const x=LB[i]; if(!x) return; $("lbImg").src=x.src;
   const c=$("lbCap"); c.classList.toggle("sub",!!x.tag);
-  if(x.tag) c.innerHTML=`<span class="sbt">${esc(x.tag)}　（${i+1}/${LB.length}）</span><span class="sbx">${esc(x.txt)}</span>`;
+  if(x.tag) c.innerHTML=`<span class="sbt">${esc(x.tag)}</span><span class="sbx">${esc(x.txt)}</span>`;
   else c.textContent=x.cap+"　（"+(i+1)+"/"+LB.length+"）";
   $("lb").classList.add("on");}
 $("lb").addEventListener("click",e=>{ if(e.target.classList.contains("prev")) openLB((lbI-1+LB.length)%LB.length);
@@ -1006,9 +1006,9 @@ function drawReview(){
   if(key===rvKey) return; rvKey=key;
   LBS.rv.length=0; let n=0, h="";
   rows.forEach((r,i)=>r.frames.forEach((f,k)=>{ n++;
-    const txt=f.text||(k===0?r.text:""), tag=`${n}　第${i+1}段${r.title?" "+r.title:""}`;
-    LBS.rv.push({src:f.src,cap:`${n} · ${f.time||""}　${txt}`,tag:tag+(f.time?"　"+f.time:""),txt});
-    h+=`<div class="fr${k===0?" p0":""}" data-lb="${LBS.rv.length-1}" title="${esc(f.time||"")}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy">
+    const txt=f.text||(k===0?r.text:""), tag=`${n}　第${i+1}段${f.time?"　"+f.time:""}`;   // 只写：编号　第几段　时间
+    LBS.rv.push({src:f.src,cap:`${tag}　${txt}`,tag,txt});
+    h+=`<div class="fr${k===0?" p0":""}" data-lb="${LBS.rv.length-1}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy">
       <div class="sub"><span class="sbt">${esc(tag)}</span><span class="sbx">${esc(txt)}</span></div></div></div>`; }));
   $("rvBoards").innerHTML=`<div class="wall">${h}</div>`;
 }
