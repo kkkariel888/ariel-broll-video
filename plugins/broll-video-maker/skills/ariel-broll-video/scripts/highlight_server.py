@@ -13,7 +13,7 @@
 页面上每点一下都写进 <工作文件夹>/事件.jsonl ——这就是「门铃」：AI 在后台跑 wait_page.py 等它，一点就醒，不用回对话发消息。
 AI 往工作文件夹写 风格排名.json / 逐帧审稿.json / 成片.json，页面每 1.5 秒自己刷新。
 """
-import argparse, json, os, re, socket, sys, time, urllib.parse, zipfile, threading
+import argparse, json, os, re, shutil, socket, sys, time, urllib.parse, zipfile, threading
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import escape
@@ -177,6 +177,7 @@ def write_docx(path, title, blocks, ranges):
 def free_port(want):
     for p in [want] + list(range(want + 1, want + 50)):
         with socket.socket() as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)   # 刚关掉的旧页面会占着端口几十秒，允许马上复用，地址不变
             try:
                 s.bind(("127.0.0.1", p)); return p
             except OSError:
@@ -259,7 +260,11 @@ class Project:
                     f["src"] = "files/" + urllib.parse.quote(f["img"])
                     frames.append(f)
             rrows.append(dict(r, frames=frames))
-        st["review"] = {"rows": rrows, "size": rv.get("size", "1080x1920"), "note": rv.get("note", ""), "approved": bool(marks.get("_all"))}
+        ch = st.get("chosen") or {}
+        # 审稿图是用哪个风格画的（AI 写 逐帧审稿.json 时带 style）；和现在选定的不一样 = 正在用新风格重画
+        stale = bool(rrows) and bool(rv.get("style")) and rv.get("style") != ch.get("slug")
+        st["review"] = {"rows": rrows, "size": rv.get("size", "1080x1920"), "note": rv.get("note", ""), "approved": bool(marks.get("_all")),
+                        "style": rv.get("style", ""), "stale": stale, "redrawing": ch.get("name", "") if stale else ""}
         out = jload(self.p("成片.json"), {}) or {}
         clips = []
         for c in out.get("clips", []):
@@ -353,6 +358,16 @@ class Project:
                 self.ring("more")
             elif a == "save_style":
                 self.ring("save_style", slug=self.save_style(d.get("slug")))
+            elif a == "unsave_style":
+                slug = re.sub(r"[^a-z0-9-]+", "-", str(d.get("slug", "")).lower()).strip("-")
+                src = os.path.join(MINE, slug)
+                if slug and os.path.isdir(src):   # 不直接删：挪进废纸篓，点错了能捡回来
+                    trash = os.path.join(os.path.expanduser("~"), ".Trash")
+                    if not os.path.isdir(trash):
+                        trash = os.path.join(MINE, ".removed"); os.makedirs(trash, exist_ok=True)
+                    dst = os.path.join(trash, f"素材库-{slug}-{time.strftime('%H%M%S')}")
+                    shutil.move(src, dst)
+                    self.ring("unsave_style", slug=slug)
             elif a == "review":
                 marks = jload(self.p("审稿结果.json"), {}) or {}
                 marks[d.get("no")] = {"ok": bool(d.get("ok")), "note": d.get("note", "")}
@@ -560,7 +575,11 @@ def main():
                         proj.ring("confirm", count=data.get("count", 0))
             self.send(200, '{"ok":true}', "application/json")
 
-    port = free_port(a.port)
+    # 每期视频记住自己的端口：重启先用这期上次那个，地址不变；被别的程序占了才往后找（两期同时开也各用各的）
+    pf = os.path.join(work, "_端口.json")
+    last = (jload(pf, {}) or {}).get("port")
+    port = free_port(last or a.port)
+    jsave(pf, {"port": port})
     srv = ThreadingHTTPServer(("127.0.0.1", port), H)
     print(f"标黄页面已启动：http://127.0.0.1:{port}/", flush=True)
     print(f"工作文件夹：{work}", flush=True)

@@ -307,6 +307,7 @@ button[aria-pressed="true"] .radio{border:4px solid var(--accent)}
 .grid .rowh .why{-webkit-line-clamp:2;margin:0 0 4px}
 .big.starred{border-color:#E0A100;color:#9A6000;background:color-mix(in srgb,#E0A100 12%,var(--bg-card))}
 .big.lib2{font-size:12.5px;padding:5px 10px}
+.big.chosenbtn,.big.chosenbtn:disabled{background:var(--success-light);border-color:var(--success-border);color:var(--success);opacity:1;cursor:default}
 .big.lib2.on{background:var(--success-light);border-color:var(--success-border);color:var(--success)}
 .big.huge{font-size:15px;padding:11px 22px}
 .tray{position:fixed;left:0;right:0;bottom:0;z-index:25;display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--bg-card);border-top:2px solid var(--accent);box-shadow:0 -6px 20px rgba(0,0,0,.08);font-size:14px;overflow-x:auto}
@@ -330,6 +331,7 @@ body.has-tray .page{padding-bottom:110px}
 .cc img{height:min(200px,24vh);max-width:100%;object-fit:contain;border-radius:6px}
 .cf{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 /* 审稿：分镜墙 */
+#rvBoards.stale .im img{opacity:.35;filter:grayscale(1)}
 .rvbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 16px}
 .chat{font-size:13px;color:var(--text-muted);background:var(--bg-desk);border:1px dashed var(--border);border-radius:8px;padding:7px 12px}
 .chat b{color:var(--text-main)}
@@ -868,7 +870,7 @@ let confirmed=false;
 /* ---------- 顶部状态条按阶段显示 ---------- */
 const STAGE_HINTS = {
   doc: "标黄阶段：划选要配画面的原话（标 1 段、很长一段都行），再按顺序选好上面 4 步，点「开始做」。",
-  style: "选风格：看中了点「就这个」；拿不准点「备选」，最后在备选里比一比；「加入素材库」是永久存，下次标黄页直接选。",
+  style: "选风格：看中了点「就这个」；拿不准点「备选」，最后在备选里比一比；「加入素材库」是永久存，下次标黄页直接选，再点一下可以移出。",
   review: "审稿：一张图配一句口播，点图放大一张张看。没问题点「没问题，出片」；要改哪张，回对话说图上的数字。",
   out: "成片：先在这里看，没问题点「没问题，放进文件夹」，文件夹里只多这几个视频。"
 };
@@ -1080,9 +1082,9 @@ function drawStyles(){
     const on=sl.includes(r.slug);
     h+=`<div class="sblk"><div class="rowh${r.slug===chosen?" chosen":""}"><span class="tag">${esc(SRC[r.source]||"")}${r.repo?" · "+esc(r.repo.split("/").pop()):""}</span><b>${esc(r.name)}</b>
       <div class="why"><span class="look-lbl">长什么样：</span>${esc(r.look||r.why||"")}</div>
-      <div class="btns"><button class="big${r.slug===chosen?"":" pri"}" type="button" data-pick="${esc(r.slug)}" ${r.ready?"":"disabled"}>${r.slug===chosen?"已选这个":"就这个"}</button>
+      <div class="btns"><button class="big${r.slug===chosen?" chosenbtn":" pri"}" type="button" data-pick="${esc(r.slug)}" ${r.ready&&r.slug!==chosen?"":"disabled"}>${r.slug===chosen?"✓ 已选定":(chosen?"换成这个":"就这个")}</button>
         <button class="big${on?" starred":""}" type="button" data-short="${esc(r.slug)}" data-on="${on?0:1}" ${r.ready?"":"disabled"}>${on?"✓ 已备选":"＋ 备选"}</button>
-        <button class="big lib2${r.in_mine?" on":""}" type="button" data-save="${esc(r.slug)}" ${r.in_mine||!r.ready?"disabled":""}>${r.in_mine?"已在素材库":"加入素材库"}</button></div></div><div class="cells">`;
+        <button class="big lib2${r.in_mine?" on":""}" type="button" data-save="${esc(r.slug)}" data-on="${r.in_mine?0:1}" title="${r.in_mine?"点一下移出素材库（放进废纸篓）":"永久存，下次直接选"}" ${r.ready?"":"disabled"}>${r.in_mine?"✓ 已在素材库":"加入素材库"}</button></div></div><div class="cells">`;
     r.cells.forEach((c,k)=>{
       if(c){ LBS.style.push({src:c,cap:r.name+" · "+sent(S.sentences[k])}); h+=`<div class="cell" data-lb="${LBS.style.length-1}"><img src="${esc(c)}" alt="${esc(r.name)} 样图 ${k+1}"><i>${N[k]}</i></div>`; }
       else h+=`<div class="cell wait"><span><span class="spin"></span>画图中</span><i>${N[k]}</i></div>`;
@@ -1116,8 +1118,8 @@ function drawCmp(){
     h+=`<div class="stk"><b>${N[k]}</b>${esc(sent(S.sentences[k]))}</div>`;
     items.forEach(r=>{ LBS.style.push({src:r.cells[k],cap:r.name+" · "+sent(S.sentences[k])}); h+=`<div class="cc" data-lb="${LBS.style.length-1}"><img src="${esc(r.cells[k]||"")}" alt=""></div>`; });
   });
-  h+=`<div class="stk"></div>`+items.map(r=>`<div class="cf"><button class="big${r.slug===chosen?"":" pri"}" type="button" data-pick="${esc(r.slug)}">${r.slug===chosen?"已选这个":"就这个"}</button>
-    <button class="big lib2${r.in_mine?" on":""}" type="button" data-save="${esc(r.slug)}" ${r.in_mine?"disabled":""}>${r.in_mine?"已存":"存"}</button></div>`).join("");
+  h+=`<div class="stk"></div>`+items.map(r=>`<div class="cf"><button class="big${r.slug===chosen?" chosenbtn":" pri"}" type="button" data-pick="${esc(r.slug)}" ${r.slug===chosen?"disabled":""}>${r.slug===chosen?"✓ 已选定":(chosen?"换成这个":"就这个")}</button>
+    <button class="big lib2${r.in_mine?" on":""}" type="button" data-save="${esc(r.slug)}" data-on="${r.in_mine?0:1}" title="${r.in_mine?"点一下移出素材库":"加入素材库"}">${r.in_mine?"✓ 已存":"存"}</button></div>`).join("");
   cmp.innerHTML=h;
 }
 async function styleClick(e){
@@ -1125,9 +1127,12 @@ async function styleClick(e){
   if(e.target.closest("#more")){ const m=e.target.closest("#more"); m.disabled=true; try{await act({act:"more"}); setStatus("AI 再挑 3 个风格来画，画好接在后面；之前的都还在。");}catch(err){} setTimeout(()=>m.disabled=false,8000); return; }
   if(e.target.closest("#toCmp")){CMP=true; drawCmp(); drawTray(); window.scrollTo(0,0); return;}
   const lb=e.target.closest("[data-lb]"); if(lb){LB=LBS.style; openLB(+lb.dataset.lb);return;}
-  const b=e.target.closest("button[data-pick]"); if(b){b.disabled=true; try{await act({act:"pick",slug:b.dataset.pick}); setStatus("风格选好了，AI 开始画逐帧图，画好出现在「③ 审稿」。",true);}catch(err){setStatus("没点成功："+err.message);} return;}
+  const b=e.target.closest("button[data-pick]"); if(b){ if(b.disabled)return; b.disabled=true; const nm=((ST.styles.rows||[]).find(r=>r.slug===b.dataset.pick)||{}).name||""; const hasRv=ST.review&&ST.review.rows&&ST.review.rows.length;
+    ST.chosen=Object.assign({},ST.chosen||{},{slug:b.dataset.pick,name:nm});   // 先在页面上改掉，不等服务端：马上跳审稿、旧图马上变灰
+    if(hasRv){ show("review"); drawReview(); }
+    try{await act({act:"pick",slug:b.dataset.pick}); setStatus("已选定「"+nm+"」，AI 开始画，画好出现在「③ 审稿」。",true);}catch(err){b.disabled=false; setStatus("没点成功："+err.message);} return;}
   const s=e.target.closest("button[data-short]"); if(s){ try{await act({act:"shortlist",slug:s.dataset.short,on:s.dataset.on==="1"});}catch(err){setStatus("没点成功："+err.message);} return;}
-  const v=e.target.closest("button[data-save]"); if(v){v.disabled=true; try{await act({act:"save_style",slug:v.dataset.save}); setStatus("已加入素材库。下次标黄页第 4 步「我的素材库」里直接选。",true);}catch(err){setStatus("没点成功："+err.message);} }
+  const v=e.target.closest("button[data-save]"); if(v){v.disabled=true; const add=v.dataset.on==="1"; try{await act({act:add?"save_style":"unsave_style",slug:v.dataset.save}); setStatus(add?"已加入素材库。下次标黄页第 4 步「我的素材库」里直接选；再点一下可以移出。":"已移出素材库（放进了废纸篓，点错了可以从废纸篓捡回来）。",true);}catch(err){v.disabled=false; setStatus("没点成功："+err.message);} }
 }
 $("v-style").addEventListener("click",styleClick);
 $("tray").addEventListener("click",styleClick);
@@ -1151,8 +1156,11 @@ function drawReview(){
   $("rvTitle").textContent=total?`审稿 · ${total} 张`:"审稿";
   const single=rows.every(r=>r.frames.length<=1);   // 一处标黄一张图（现在的做法）
   $("rvHint").innerHTML=R.note?esc(R.note):!rows.length?"":single?`你标了 ${rows.length} 处，一处一张图，出片就是 ${rows.length} 段视频（编号就是你标黄的 B 几）。`:`一张图配一句口播，按顺序编号 1～${total}。<span class="p0dot">橙色编号</span>是新一段的开头：你标了 ${rows.length} 段，出片就是 ${rows.length} 段视频。`;
-  $("approveAll").disabled=!rows.length||R.approved;
-  $("approveAll").textContent=R.approved?"已确认，正在出片…":"没问题，出片 →";
+  const cs=ST.chosen&&ST.chosen.slug; R.stale=!!(rows.length&&R.style&&cs&&R.style!==cs); R.redrawing=R.stale?(ST.chosen.name||""):"";
+  $("approveAll").disabled=!rows.length||R.approved||R.stale;
+  $("approveAll").textContent=R.approved?"已确认，正在出片…":R.stale?"重画中，画好就能出片":"没问题，出片 →";
+  $("rvBoards").classList.toggle("stale",!!R.stale);
+  if(R.stale) $("rvHint").innerHTML=`<span class="spin"></span> 正在用「${esc(R.redrawing)}」重画这 ${total} 张，画好一张换一张，下面灰着的是旧风格。`;
   $("rvBoards").classList.toggle("wide",W>H); $("rvBoards").classList.toggle("square",W===H);
   const key=JSON.stringify([rows.map(r=>[r.no,r.text,r.time,r.frames]),R.size]);
   if(key===rvKey) return; rvKey=key;
