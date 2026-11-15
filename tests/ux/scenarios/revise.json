@@ -1,0 +1,50 @@
+{
+  "id": "revise",
+  "name": "审稿时点「要改」",
+  "covers": [
+    "revise"
+  ],
+  "start_from": "checkpoints/review_ready",
+  "needs": "主路线跑完后用 save_checkpoint.py 存的 review_ready 存档",
+  "request": "（接着上次：审稿表已出齐。按页面门铃继续做）",
+  "page_script": "tests/ux/page_revise.json",
+  "env": {
+    "BROLL_HOME": "$UX_CACHE/broll-home",
+    "LEMO_OPUSCAR_HOME": "$UX_CACHE/lemo-opuscar",
+    "LEMO_MY_STYLES": "$RUN/_home/my-styles"
+  },
+  "steps": [
+    {
+      "id": "revise_sent",
+      "name": "点了要改"
+    },
+    {
+      "id": "revised",
+      "name": "那一处改好重出关键帧",
+      "from": "revise_sent",
+      "budget_s": 120
+    }
+  ],
+  "total_budget_s": 300,
+  "watch": [
+    "plugins/broll-video-maker/skills/ariel-broll-video/SKILL.md",
+    "plugins/broll-video-maker/skills/ariel-broll-video/assets/highlighter.html"
+  ],
+  "criteria": [
+    {
+      "type": "step_within",
+      "step": "revised",
+      "weight": 2
+    },
+    {
+      "type": "said",
+      "pattern": "改好|改了"
+    },
+    {
+      "type": "max_count",
+      "what": "user_messages",
+      "max": 0
+    }
+  ],
+  "executor_note": "临时文件夹里已经有中间结果（.broll/ 里的文件）。先照 SKILL.md 第 2 步把页面开起来（用已有的 字幕_修正.srt，不重新听写、不重挑标黄），再跑门铃，从 第 5 步的「review」（要改）那里接着做。"
+}

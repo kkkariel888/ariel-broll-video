@@ -1,0 +1,55 @@
+{
+  "id": "landscape",
+  "name": "横屏视频",
+  "covers": [
+    "landscape"
+  ],
+  "start_from": "checkpoints/landscape",
+  "request": "帮我给这个文件夹里的口播视频配 B-roll",
+  "page_script": "tests/ux/page_style.json",
+  "env": {
+    "BROLL_HOME": "$UX_CACHE/broll-home",
+    "LEMO_OPUSCAR_HOME": "$UX_CACHE/lemo-opuscar",
+    "LEMO_MY_STYLES": "$RUN/_home/my-styles"
+  },
+  "steps": [
+    {
+      "id": "page_open",
+      "name": "页面打开",
+      "budget_s": 150
+    },
+    {
+      "id": "mode_chosen",
+      "name": "选模式"
+    },
+    {
+      "id": "samples_ready",
+      "name": "样图出齐",
+      "from": "mode_chosen",
+      "budget_s": 180
+    }
+  ],
+  "total_budget_s": 480,
+  "stop_after": "samples_ready",
+  "watch": [
+    "plugins/broll-video-maker/skills/ariel-broll-video/SKILL.md",
+    "plugins/broll-video-maker/skills/ariel-broll-video/assets/highlighter.html"
+  ],
+  "criteria": [
+    {
+      "type": "json_check",
+      "path": ".broll/风格排名.json",
+      "expr": "size == '1920x1080'",
+      "weight": 3
+    },
+    {
+      "type": "page_check",
+      "name": "9 张样图一屏看完"
+    },
+    {
+      "type": "max_count",
+      "what": "asks",
+      "max": 0
+    }
+  ]
+}

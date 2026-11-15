@@ -1,0 +1,39 @@
+{
+  "id": "trigger",
+  "name": "随口一说能不能叫起 skill",
+  "covers": [
+    "trigger"
+  ],
+  "start_from": "checkpoints/transcribed",
+  "executor": "fresh",
+  "executor_note": "用一个全新的、没看过本 skill 的 AI（claude -p 或新子任务，不预先读 SKILL.md）在临时文件夹里收到 request，只看它第一句回复和有没有调用 ariel-broll-video。",
+  "request": "这个视频太干了，帮我加点动画素材进去",
+  "page_script": null,
+  "steps": [
+    {
+      "id": "first_reply",
+      "name": "第一句",
+      "budget_s": 10
+    }
+  ],
+  "total_budget_s": 60,
+  "stop_after": "first_reply",
+  "watch": [
+    "plugins/broll-video-maker/skills/ariel-broll-video/SKILL.md"
+  ],
+  "criteria": [
+    {
+      "type": "said",
+      "pattern": "B-roll|收到，开工",
+      "weight": 2
+    },
+    {
+      "type": "step_within",
+      "step": "first_reply"
+    }
+  ],
+  "env": {
+    "LEMO_OPUSCAR_HOME": "$UX_CACHE/lemo-opuscar",
+    "BROLL_HOME": "$UX_CACHE/broll-home"
+  }
+}

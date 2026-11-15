@@ -1,0 +1,172 @@
+{
+  "id": "style_source",
+  "name": "风格从哪来：${row.name}",
+  "covers": [
+    "style_${row.id}"
+  ],
+  "start_from": "checkpoints/${row.start}",
+  "request": "${row.request}",
+  "answers": {
+    "要不要存进我的风格": "不用",
+    "其他任何问题": "按你觉得最好的来"
+  },
+  "page_script": "${row.page}",
+  "env": {
+    "BROLL_HOME": "$UX_CACHE/broll-home",
+    "LEMO_OPUSCAR_HOME": "$UX_CACHE/lemo-opuscar",
+    "LEMO_MY_STYLES": "$RUN/_home/my-styles"
+  },
+  "steps": [
+    {
+      "id": "page_open",
+      "name": "标黄页面打开",
+      "budget_s": 90
+    },
+    {
+      "id": "mode_chosen",
+      "name": "用户选了模式"
+    },
+    {
+      "id": "samples_ready",
+      "name": "9 张样图出齐",
+      "from": "mode_chosen",
+      "budget_s": 180
+    }
+  ],
+  "limits": {
+    "silent_wait_s": 45,
+    "asks": 2
+  },
+  "total_budget_s": 420,
+  "watch": [
+    "plugins/broll-video-maker/skills/ariel-broll-video/SKILL.md",
+    "plugins/broll-video-maker/skills/ariel-broll-video/scripts/dna.py",
+    "plugins/broll-video-maker/skills/ariel-broll-video/scripts/lemo.py",
+    "plugins/broll-video-maker/skills/ariel-broll-video/scripts/card.py",
+    "plugins/broll-video-maker/skills/ariel-broll-video/references/**"
+  ],
+  "criteria": "${row.criteria}",
+  "dataset": {
+    "rows": [
+      {
+        "id": "github",
+        "name": "GitHub 风格链接",
+        "start": "transcribed",
+        "page": "tests/ux/page_style.json",
+        "request": "给这个文件夹里的口播配 B-roll，风格用这个：https://github.com/alchaincyf/huashu-design",
+        "criteria": [
+          {
+            "type": "json_check",
+            "path": ".broll/风格排名.json",
+            "expr": "candidates[0].source == 'github'",
+            "weight": 2
+          },
+          {
+            "type": "step_within",
+            "step": "samples_ready",
+            "weight": 2
+          },
+          {
+            "type": "said",
+            "pattern": "许可证|MIT|可以用"
+          },
+          {
+            "type": "page_check",
+            "name": "9 张样图一屏看完"
+          }
+        ]
+      },
+      {
+        "id": "repo",
+        "name": "整个风格库仓库",
+        "start": "transcribed",
+        "page": "tests/ux/page_style.json",
+        "request": "口播配 B-roll，从这个风格库里挑：https://github.com/alchaincyf/huashu-art-motion",
+        "criteria": [
+          {
+            "type": "json_check",
+            "path": ".broll/风格排名.json",
+            "expr": "len(candidates) >= 3",
+            "weight": 2
+          },
+          {
+            "type": "step_within",
+            "step": "samples_ready",
+            "weight": 2
+          },
+          {
+            "type": "not_said",
+            "pattern": "梵高|莫奈|毕加索"
+          }
+        ]
+      },
+      {
+        "id": "nolicense",
+        "name": "没有许可证的仓库",
+        "start": "transcribed",
+        "page": null,
+        "request": "口播配 B-roll，风格用这个仓库的：https://github.com/motiontemplates/all",
+        "criteria": [
+          {
+            "type": "said",
+            "pattern": "许可证|license|不能用",
+            "weight": 3
+          },
+          {
+            "type": "not_said",
+            "pattern": "已经用.*motiontemplates"
+          },
+          {
+            "type": "max_count",
+            "what": "asks",
+            "max": 1
+          }
+        ]
+      },
+      {
+        "id": "refimage",
+        "name": "参考图拆风格",
+        "start": "refimage",
+        "page": "tests/ux/page_style.json",
+        "request": "口播配 B-roll，风格照文件夹里这张参考图来",
+        "criteria": [
+          {
+            "type": "json_check",
+            "path": ".broll/风格排名.json",
+            "expr": "candidates[0].source == 'dna'",
+            "weight": 2
+          },
+          {
+            "type": "step_within",
+            "step": "samples_ready",
+            "weight": 2
+          },
+          {
+            "type": "page_check",
+            "name": "9 张样图一屏看完"
+          }
+        ]
+      },
+      {
+        "id": "mine",
+        "name": "我的风格",
+        "start": "my_style",
+        "page": "tests/ux/page_style.json",
+        "request": "口播配 B-roll，用我的风格「暖纸拼贴」",
+        "criteria": [
+          {
+            "type": "json_check",
+            "path": ".broll/风格排名.json",
+            "expr": "candidates[0].source == 'mine'",
+            "weight": 2
+          },
+          {
+            "type": "step_within",
+            "step": "samples_ready",
+            "weight": 2
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+[
+  {"id": "main", "name": "主路线：给文件夹 → 标黄 → 选风格 → 审稿 → 出片"},
+  {"id": "first_reply", "name": "10 秒内回第一句"},
+  {"id": "doorbell", "name": "页面一点就叫醒 AI（不用回对话打字）"},
+  {"id": "grid_one_screen", "name": "9 张样图一屏看完、点开放大"},
+  {"id": "clean_folder", "name": "文件夹最后只有口播和 B-roll成片/"},
+  {"id": "style_github", "name": "风格来源：给一个 GitHub 风格链接"},
+  {"id": "style_repo", "name": "风格来源：给一整个风格库仓库"},
+  {"id": "style_nolicense", "name": "风格来源：仓库没有许可证，要拦下说清楚"},
+  {"id": "style_refimage", "name": "风格来源：给一张参考图，拆出风格 DNA"},
+  {"id": "style_last", "name": "风格来源：「用上次那个」"},
+  {"id": "style_mine", "name": "风格来源：我的风格"},
+  {"id": "more_styles", "name": "选风格时点「再来 3 个风格」"},
+  {"id": "revise", "name": "审稿时点「要改」写一句"},
+  {"id": "own_srt", "name": "自带剪映字幕 + 逐字稿（不重新听写）"},
+  {"id": "landscape", "name": "横屏视频（画布自动 1920×1080）"},
+  {"id": "trigger", "name": "随口一说，skill 能自己被叫起来"},
+  {"id": "codex", "name": "Codex 里能装、能开工、能打开页面"}
+]
