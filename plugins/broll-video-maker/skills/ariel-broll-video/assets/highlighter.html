@@ -447,6 +447,12 @@ html,body{overflow-anchor:none}
 /* 放大图：字也别太大 */
 .lb .cap.sub .sbt{font-size:clamp(10px,1.4vh,13px);padding:2px 10px;margin-left:10px}
 .lb .cap.sub .sbx{font-size:clamp(12px,1.9vh,17px);padding:.45em .75em;border-width:2px}
+/* 回到顶部：一直贴在右下角跟着走 */
+.totop{position:fixed;right:18px;bottom:24px;z-index:30;display:flex;flex-direction:column;align-items:center;gap:1px;width:46px;padding:8px 0 6px;border-radius:12px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-main);box-shadow:var(--shadow-md);cursor:pointer;font:inherit;transition:transform .15s ease,border-color .15s ease,color .15s ease}
+.totop small{font-size:10.5px;color:var(--text-muted)}
+.totop:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+.totop[hidden]{display:none}
+body.has-tray .totop{bottom:96px}
 @media (max-width:520px){
   .grp{padding:0 4px}
   .tb{min-width:36px;padding:4px 3px}.tb small{font-size:10px}
@@ -580,6 +586,7 @@ html,body{overflow-anchor:none}
 <div class="lb vm" id="vm"><button class="x" type="button" title="关闭 (Esc)">×</button><video id="vmVideo" controls playsinline></video><div class="cap" id="vmCap"></div></div>
 
 <!-- 图片放大灯箱 -->
+<button class="totop" id="toTop" type="button" title="回到顶部" aria-label="回到顶部" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg><small>顶部</small></button>
 <div class="lb" id="lb"><button class="x" type="button" title="关闭 (Esc)">×</button><button class="prev" type="button" title="上一张 (←)">‹</button><div class="lbw"><img id="lbImg" alt=""><div class="cap" id="lbCap"></div></div><button class="next" type="button" title="下一张 (→)">›</button></div>
 
 <!-- 划选迷你弹窗 -->
@@ -591,25 +598,33 @@ const DOC = __DATA__;
 const docEl=document.getElementById("doc");
 document.getElementById("ttl").textContent=DOC.title;
 const paras=[];
-const bits=[];
+const bits=[];   // 每个字记它属于哪一处标黄（0 = 没标）：用户划一次就是一处，紧挨着也不合并
+let nextId=1;
 const sugBits=[];
 const pick=[];
 DOC.blocks.forEach(b=>{
   if(b.type==="h"){const h=document.createElement("h2"); h.textContent=b.text; docEl.appendChild(h); return;}
   const p=document.createElement("p"); p.dataset.pi=paras.length; if(b.time)p.dataset.time=b.time; docEl.appendChild(p);
-  const hl=new Uint8Array(b.text.length), sg=new Uint8Array(b.text.length);
-  (b.hl||[]).forEach(([s,e])=>hl.fill(1,s,e)); (b.sug||[]).forEach(([s,e])=>sg.fill(1,s,e));
+  const hl=new Uint32Array(b.text.length), sg=new Uint8Array(b.text.length);
+  (b.hl||[]).forEach(([s,e])=>hl.fill(nextId++,s,e)); (b.sug||[]).forEach(([s,e])=>sg.fill(1,s,e));
   paras.push({el:p,text:b.text,initial:hl.slice(),cues:b.cues||null}); bits.push(hl); sugBits.push(sg); pick.push(new Uint8Array(b.text.length));
 });
 
 /* ---------- 撤销 / 重做 ---------- */
 const undoStack=[], redoStack=[];
-function snap(){return bits.map(a=>Array.from(a).join(""));}
-function restore(s){s.forEach((str,i)=>{for(let k=0;k<str.length;k++)bits[i][k]=str.charCodeAt(k)-48;});}
+function snap(){return bits.map(a=>a.slice());}
+function restore(s){s.forEach((arr,i)=>bits[i].set(arr));}
 function commit(fn){undoStack.push(snap()); if(undoStack.length>200)undoStack.shift(); redoStack.length=0; fn(); confirmed=false; render();}
 
 /* ---------- 画出来 ---------- */
-function runs(pi){const a=bits[pi],out=[];let s=-1;for(let i=0;i<=a.length;i++){if(a[i]&&s<0)s=i;if(!a[i]&&s>=0){out.push([s,i]);s=-1;}}return out;}
+// 这一段文字里的每一处：[起, 止, 第几处的编号]（编号不同就是不同的处，哪怕紧挨着）
+function runs(pi){const a=bits[pi],out=[];let s=0;for(let i=1;i<=a.length;i++){if(i===a.length||a[i]!==a[s]){if(a[s])out.push([s,i,a[s]]);s=i;}}return out;}
+// 擦掉一处中间的字以后，剩下的前后两块各算一处
+function splitBroken(){const seen=new Set();let prev=0;
+  paras.forEach((p,pi)=>{const a=bits[pi];
+    runs(pi).forEach(([s,e,id])=>{ const cont=s===0&&prev===id;   // 一处跨到下一段文字里，接着算同一处
+      if(seen.has(id)&&!cont){const nid=nextId++; a.fill(nid,s,e); seen.add(nid);} else seen.add(id); });
+    prev=a.length?a[a.length-1]:0; });}
 function render(skipSave){
   let no=0;
   paras.forEach((p,pi)=>{
@@ -618,13 +633,14 @@ function render(skipSave){
     let i=0;
     while(i<t.length){
       const kind=kindAt(i); let j=i+1;
-      while(j<t.length && kindAt(j)===kind) j++;
+      while(j<t.length && kindAt(j)===kind && a[j]===a[i]) j++;
       const seg=t.slice(i,j);
       if(kind==="n") p.el.append(seg);
       else{
         const e=document.createElement(kind[0]==="m"?"mark":"span");
         const cls=[]; if(kind[0]==="g")cls.push("ghost"); if(kind[1]==="p")cls.push("pick"); if(cls.length)e.className=cls.join(" ");
-        if(kind[0]==="m" && !(i>0 && a[i-1])){no++; e.dataset.no="B"+no;}
+        const startsHere=i>0?a[i-1]!==a[i]:!(pi>0&&bits[pi-1].length&&bits[pi-1][bits[pi-1].length-1]===a[i]);
+        if(kind[0]==="m" && startsHere){no++; e.dataset.no="B"+no;}
         e.textContent=seg; p.el.append(e);
       }
       i=j;
@@ -636,12 +652,15 @@ function render(skipSave){
   if(!skipSave) save();
 }
 function result(){
-  const list=[];let no=0;
-  paras.forEach((p,pi)=>runs(pi).forEach(([s,e])=>{no++;
+  const list=[], byId=new Map();
+  paras.forEach((p,pi)=>runs(pi).forEach(([s,e,id])=>{
     let ai=false; for(let k=s;k<e;k++) if(sugBits[pi][k]){ai=true;break;}
     let t0=null,t1=null;
     if(p.cues){const c0=p.cues.find(c=>s<c[1])||p.cues[0], c1=[...p.cues].reverse().find(c=>e>c[0])||p.cues[p.cues.length-1]; t0=c0[2]; t1=c1[3];}
-    list.push({no:"B"+no, text:p.text.slice(s,e).trim(), startTime:t0, endTime:t1, paragraph:pi+1, start:s, end:e, wholeParagraph:p.text.slice(0,s).trim()===""&&p.text.slice(e).trim()==="", fromAI:ai});
+    const x=byId.get(id);
+    if(x){ x.text+=p.text.slice(s,e).trim(); x.endTime=t1; x.end=e; x.wholeParagraph=false; x.fromAI=x.fromAI||ai; return; }   // 一处跨两段文字：接着拼
+    const it={no:"B"+(list.length+1), text:p.text.slice(s,e).trim(), startTime:t0, endTime:t1, paragraph:pi+1, start:s, end:e, wholeParagraph:p.text.slice(0,s).trim()===""&&p.text.slice(e).trim()==="", fromAI:ai};
+    byId.set(id,it); list.push(it);
   }));
   return list;
 }
@@ -665,7 +684,19 @@ function pickSpans(){const out=[];pick.forEach((a,pi)=>{let s=-1;for(let i=0;i<=
 function hasPicks(){return pick.some(a=>a.some(x=>x));}
 function clearPicks(){pick.forEach(a=>a.fill(0));}
 function targets(){return pickSpans().concat(selectionSpans());}
-function apply(spans,val){ if(!spans.length) return false; clearPicks(); commit(()=>spans.forEach(([pi,s,e])=>bits[pi].fill(val,s,e))); window.getSelection().removeAllRanges(); return true; }
+function apply(spans,val){ if(!spans.length) return false;
+  const picked=pickSpans(), sel=selectionSpans(); clearPicks();
+  commit(()=>{
+    if(!val){ spans.forEach(([pi,s,e])=>bits[pi].fill(0,s,e)); splitBroken(); return; }
+    // Ctrl/⌘ 跳着选的每一块各是一处；一次划选（哪怕跨两段文字）是一处
+    const groups=picked.map(x=>[x]); if(sel.length) groups.push(sel);
+    groups.forEach(g=>{ const id=nextId++, hit=new Set();
+      g.forEach(([pi,s,e])=>{for(let k=s;k<e;k++) if(bits[pi][k]) hit.add(bits[pi][k]);});
+      if(hit.size) bits.forEach(a=>{for(let k=0;k<a.length;k++) if(hit.has(a[k])) a[k]=id;});   // 碰到的旧处整处并进来
+      g.forEach(([pi,s,e])=>bits[pi].fill(id,s,e)); });
+    splitBroken();
+  });
+  window.getSelection().removeAllRanges(); return true; }
 
 /* ---------- 荧光笔 / 橡皮擦模式 ---------- */
 let mode=null; const penBtn=document.getElementById("pen"), eraBtn=document.getElementById("eraser");
@@ -798,7 +829,8 @@ function show(v){
 function setCompact(){ const y=scrollY, c=document.body.classList.contains("compact");
   if(view!=="doc"){ if(c) document.body.classList.remove("compact"); return; }
   if(!c&&y>120) document.body.classList.add("compact"); else if(c&&y<30) document.body.classList.remove("compact"); }
-addEventListener("scroll",()=>requestAnimationFrame(setCompact),{passive:true});
+addEventListener("scroll",()=>requestAnimationFrame(()=>{ setCompact(); $("toTop").hidden=scrollY<400; }),{passive:true});
+$("toTop").addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
 // 顶栏是浮着的：给页面留出它「展开时」的高度；收起时不改（不然下面会跳）
 const RIB=document.querySelector(".ribbon");
 function padTop(){ if(!document.body.classList.contains("compact")) document.body.style.paddingTop=RIB.offsetHeight+"px"; }
@@ -1012,7 +1044,8 @@ function drawReview(){
   const R=ST.review, rows=R.rows, total=rows.reduce((a,r)=>a+r.frames.length,0);
   const [W,H]=(R.size||"1080x1920").split("x").map(Number);
   $("rvTitle").textContent=total?`审稿 · ${total} 张`:"审稿";
-  $("rvHint").innerHTML=R.note?esc(R.note):rows.length?`一张图配一句口播，按顺序编号 1～${total}。<span class="p0dot">橙色编号</span>是新一段的开头：你标了 ${rows.length} 段，出片就是 ${rows.length} 段视频。`:"";
+  const single=rows.every(r=>r.frames.length<=1);   // 一处标黄一张图（现在的做法）
+  $("rvHint").innerHTML=R.note?esc(R.note):!rows.length?"":single?`你标了 ${rows.length} 处，一处一张图，出片就是 ${rows.length} 段视频（编号就是你标黄的 B 几）。`:`一张图配一句口播，按顺序编号 1～${total}。<span class="p0dot">橙色编号</span>是新一段的开头：你标了 ${rows.length} 段，出片就是 ${rows.length} 段视频。`;
   $("approveAll").disabled=!rows.length||R.approved;
   $("approveAll").textContent=R.approved?"已确认，正在出片…":"没问题，出片 ▶";
   $("rvBoards").classList.toggle("wide",W>H); $("rvBoards").classList.toggle("square",W===H);
@@ -1020,9 +1053,9 @@ function drawReview(){
   if(key===rvKey) return; rvKey=key;
   LBS.rv.length=0; let n=0, h="";
   rows.forEach((r,i)=>r.frames.forEach((f,k)=>{ n++;
-    const txt=f.text||(k===0?r.text:""), tag=`第${i+1}段${f.time?"　"+f.time:""}`;   // 标签：第几段　时间；编号放进字幕框开头
+    const txt=f.text||(k===0?r.text:""), tm=f.time||r.time||"", tag=single?tm:`第${i+1}段${tm?"　"+tm:""}`;   // 标签：第几段　时间；编号放进字幕框开头
     LBS.rv.push({src:f.src,cap:`${n}　${tag}　${txt}`,tag,txt,n});
-    h+=`<div class="fr${k===0?" p0":""}" data-lb="${LBS.rv.length-1}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy">
+    h+=`<div class="fr${k===0&&!single?" p0":""}" data-lb="${LBS.rv.length-1}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy">
       <div class="sub"><span class="sbt">${esc(tag)}</span><span class="sbx"><b class="no">${n}</b>${esc(txt)}</span></div></div></div>`; }));
   $("rvBoards").innerHTML=`<div class="wall">${h}</div>`;
   requestAnimationFrame(fitSubs);
@@ -1102,7 +1135,8 @@ function draw(){
 async function poll(){ try{ const r=await fetch("api/all",{cache:"no-store"}); if(r.ok){ST=await r.json(); draw();} }catch(e){} }
 function startPoll(){ if(pollTimer) return; poll(); pollTimer=setInterval(poll,1500); }
 function onConfirmed(){ if(backend!=="local") return; startPoll(); if(ST&&ST.styles.rows.some(r=>r.ready)&&!(ST.source&&ST.source.kind==="mine")) show("style"); }
-function loadRanges(rs){ if(!rs||rs.length!==paras.length) return; rs.forEach((list,i)=>{bits[i].fill(0); list.forEach(([s,e])=>bits[i].fill(1,s,e));}); }
+function loadRanges(rs){ if(!rs||rs.length!==paras.length) return; const map=new Map();   // 存的是 [起,止,第几处]；老格式只有 [起,止]
+  rs.forEach((list,i)=>{bits[i].fill(0); list.forEach(([s,e,id])=>{ let nid=id!=null?map.get(id):null; if(nid==null){nid=nextId++; if(id!=null) map.set(id,nid);} bits[i].fill(nid,s,e); });}); }
 window.addEventListener("hashchange",()=>{
   const h=location.hash.replace("#","");
   if(["doc","style","review","out"].includes(h)) show(h);
