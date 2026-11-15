@@ -19,7 +19,7 @@
   {"shot": "样图"},
   {"click": "就这个", "react": 3},
   {"step": "style_picked"},
-  {"wait_count": "#rvBoards .fr img", "n": 3, "timeout": 600},
+  {"wait_count": "#rvBoards .wall .fr img", "n": 3, "timeout": 600},
   {"sleep": 2},
   {"step": "review_ready"},
   {"shot": "分镜墙"},

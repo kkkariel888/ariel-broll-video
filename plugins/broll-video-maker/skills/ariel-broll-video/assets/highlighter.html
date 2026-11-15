@@ -404,6 +404,17 @@ html,body{overflow-anchor:none}
 /* 横屏 / 方形格式：审稿卡片、成片卡片跟着放宽，别缩成竖屏那么窄 */
 #rvBoards.wide .board{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 #clips.wide{grid-template-columns:repeat(auto-fill,minmax(220px,260px))}
+/* 审稿：小图墙，一行很多张，编号 1、2、3…（回对话说数字就能改） */
+.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:7px}
+#rvBoards.wide .wall{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.wall .fr{border-radius:6px;box-shadow:none}
+.wall .fr .im .k{top:3px;left:3px;font-size:11px;padding:0 5px;min-width:16px;text-align:center;background:rgba(20,20,19,.8)}
+.wall .fr.p0 .im .k{background:var(--accent)}
+.wall .fr.p0{border-color:color-mix(in srgb,var(--accent) 45%,var(--border))}
+.wall .fr .cap{padding:3px 5px 4px;font-size:10.5px;line-height:1.4}
+.wall .fr .cap .tx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wall .fr .cap .tm{font-size:10px}
+.p0dot{color:#fff;background:var(--accent);border-radius:4px;padding:0 5px;font-size:12px}
 @media (max-width:520px){
   .grp{padding:0 4px}
   .tb{min-width:36px;padding:4px 3px}.tb small{font-size:10px}
@@ -496,7 +507,7 @@ html,body{overflow-anchor:none}
   <h2 id="rvTitle">审稿</h2><p class="hint" id="rvHint"></p>
   <div class="rvbar">
     <button class="big pri huge" id="approveAll" type="button">没问题，出片 ▶</button>
-    <span class="chat">要改？回对话说编号，比如 <b>「B1-2 颜色再深一点」</b>，改好这里自动换图</span>
+    <span class="chat">要改？回对话说图上的数字就行，比如 <b>「5 颜色深一点」</b>，改好这里自动换图</span>
   </div>
   <div id="rvBoards"></div>
 </div></section>
@@ -691,7 +702,7 @@ let confirmed=false;
 const STAGE_HINTS = {
   doc: "标黄阶段：划选要配画面的原话（标 1 段、很长一段都行），再按顺序选好上面 4 步，点「开始做」。",
   style: "选风格：看中了点「就这个」；拿不准点「备选」，最后在备选里比一比；「加入素材库」是永久存，下次标黄页直接选。",
-  review: "审稿：一张图配一句口播，点图放大一张张看。没问题点「没问题，出片」；要改哪张，回对话说编号。",
+  review: "审稿：一张图配一句口播，点图放大一张张看。没问题点「没问题，出片」；要改哪张，回对话说图上的数字。",
   out: "成片：先在这里看，没问题点「没问题，放进文件夹」，文件夹里只多这几个视频。"
 };
 const statusEl=document.getElementById("status");
@@ -963,18 +974,19 @@ let rvKey="";
 function drawReview(){
   const R=ST.review, rows=R.rows, total=rows.reduce((a,r)=>a+r.frames.length,0);
   const [W,H]=(R.size||"1080x1920").split("x").map(Number);
-  $("rvTitle").textContent=total?`审稿 · ${total} 张逐帧图`:"审稿";
-  $("rvHint").innerHTML=R.note?esc(R.note):rows.length?`你标了 ${rows.length} 段，AI 按意思拆成了 ${total} 张（一两句一张）。<b>出片还是按你标的段落出：${rows.length} 段视频。</b>`:"";
+  $("rvTitle").textContent=total?`审稿 · ${total} 张`:"审稿";
+  $("rvHint").innerHTML=R.note?esc(R.note):rows.length?`一张图配一句口播，按顺序编号 1～${total}。<span class="p0dot">橙色编号</span>是新一段的开头：你标了 ${rows.length} 段，出片就是 ${rows.length} 段视频。`:"";
   $("approveAll").disabled=!rows.length||R.approved;
   $("approveAll").textContent=R.approved?"已确认，正在出片…":"没问题，出片 ▶";
   $("rvBoards").classList.toggle("wide",W>=H);
   const key=JSON.stringify([rows.map(r=>[r.no,r.text,r.time,r.frames]),R.size]);
   if(key===rvKey) return; rvKey=key;
-  LBS.rv.length=0;
-  $("rvBoards").innerHTML=rows.map((r,i)=>`<div class="seq"><div class="seqh"><span class="no">${esc(r.no)}</span><span class="t">第 ${i+1} 段</span>${esc(r.time||"")}${r.frames.length?" · 拆成 "+r.frames.length+" 张":""} · 出 1 段视频</div>
-    <div class="board">${r.frames.map((f,k)=>{const id=`${r.no}-${k+1}`; LBS.rv.push({src:f.src,cap:`${id} · ${f.time||""}　${f.text||r.text}`});
-      return `<div class="fr" data-lb="${LBS.rv.length-1}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${esc(id)}" loading="lazy"><span class="k">${esc(id)}</span></div>
-        <div class="cap"><div class="tm">${esc(f.time||"")}</div>${esc(f.text||(k===0?r.text:""))}</div></div>`;}).join("")}</div></div>`).join("");
+  LBS.rv.length=0; let n=0, h="";
+  rows.forEach((r,i)=>r.frames.forEach((f,k)=>{ n++;
+    const txt=f.text||(k===0?r.text:""); LBS.rv.push({src:f.src,cap:`${n} · ${f.time||""}　${txt}`});
+    h+=`<div class="fr${k===0?" p0":""}" data-lb="${LBS.rv.length-1}" title="第 ${i+1} 段 · ${esc(r.time||"")}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy"><span class="k">${n}</span></div>
+      <div class="cap"><span class="tx"><span class="tm">${esc(f.time||"")}</span> ${esc(txt)}</span></div></div>`; }));
+  $("rvBoards").innerHTML=`<div class="wall">${h}</div>`;
 }
 $("rvBoards").addEventListener("click",e=>{const lb=e.target.closest("[data-lb]"); if(lb){LB=LBS.rv; openLB(+lb.dataset.lb);}});
 $("approveAll").addEventListener("click",async()=>{ $("approveAll").disabled=true; await act({act:"approve_all"});

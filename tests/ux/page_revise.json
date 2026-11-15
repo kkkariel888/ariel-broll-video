@@ -1,7 +1,7 @@
 [
-  {"wait_count": "#rvBoards .fr img", "n": 3, "timeout": 60},
+  {"wait_count": "#rvBoards .wall .fr img", "n": 3, "timeout": 60},
   {"step": "review_ready"},
-  {"wait": "B1-1", "timeout": 30},
+  {"wait": "审稿 ·", "timeout": 30},
   {"sleep": 120},
   {"shot": "改完"}
 ]
