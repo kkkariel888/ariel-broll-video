@@ -15,7 +15,8 @@
   render.py B3.html --size 1080x1920 --out 成片/B3.mp4                                            出视频：默认 1080P 60 帧，不管原片多糊（要 4K 加 --scale 2，慢约 2.5 倍）
   render.py 样图.html --at 0 --out 风格样图/a_1.png                                              静态定格图（样图）：页面不用写 render(t)，画好设 window.READY=true
   render.py --compare 参考图.jpg 样图.png --out 对比.png                                            参考图和样图并排（检查有没有太像）
-可选：--keytimes 0.4,1.6,2.9（关键帧时间点；不填就读页面的 window.KEYTIMES，再不行取 25% / 60% / 结尾）
+可选：--keytimes 0.4,1.6,2.9（关键帧时间点，几个都行，出 1.png、2.png…；不填就读页面的 window.KEYTIMES，再不行取 25% / 60% / 结尾。
+  页面写了 window.BEATS=true（按句子拆的分镜）也出 1.png、2.png…，否则 3 张叫 开场/最满/定格）
 
 批量（并行，省时间）：
   render.py --batch 任务.json --jobs 3 --report 出图结果.json
@@ -271,12 +272,14 @@ def render(page, size='1080x1920', out=None, keyframes=False, at=None, keytimes=
             if at: times, names = [float(x) for x in at], [f'{float(x):.2f}s' for x in at]
             else:
                 times = [float(x) for x in keytimes.split(',')] if keytimes else (cdp.js('window.KEYTIMES') or [dur * 0.25, dur * 0.6, dur - 0.04])
-                names = ['开场', '最满', '定格'] if len(times) == 3 else [f'{t:.2f}s' for t in times]
+                beats = bool(keytimes) or bool(cdp.js('!!window.BEATS'))   # 按「一两句一张」拆的分镜：文件就叫 1.png、2.png…（对应 B1-1、B1-2）
+                names = None if beats else ['开场', '最满', '定格'] if len(times) == 3 else [f'{t:.2f}s' for t in times]
             single = out.suffix.lower() in ('.png', '.jpg') and len(times) == 1
             (out.parent if single else out).mkdir(parents=True, exist_ok=True)
             frames = []
             for i, t in enumerate(times):
-                draw(t); png = cdp.shot(w, h); check(t, png); frames.append((out if single else out / f'{i + 1}_{names[i]}.png', png))
+                fname = f'{i + 1}.png' if names is None else f'{i + 1}_{names[i]}.png'
+                draw(t); png = cdp.shot(w, h); check(t, png); frames.append((out if single else out / fname, png))
             for p, png in frames:
                 if label: png = with_label(cdp, png, w, h, label, tmp)
                 p.write_bytes(png); results.append(str(p))

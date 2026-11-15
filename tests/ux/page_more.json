@@ -2,11 +2,9 @@
   {"wait_count": "#grid .cell img", "n": 9, "timeout": 60},
   {"click": "再来 3 个风格", "react": 5},
   {"step": "more_asked"},
-  {"wait_count": "#grpBar button", "n": 2, "timeout": 120},
-  {"wait_count": "#grid .cell img", "n": 9, "timeout": 300},
+  {"wait_count": "#grid .cell img", "n": 18, "timeout": 300},
   {"step": "more_ready"},
-  {"all_in_view": "#grid .cell", "name": "新的 9 张样图一屏看完"},
-  {"click": "第 1 组", "react": 3},
-  {"wait_count": "#grid .cell img", "n": 9, "timeout": 10},
-  {"shot": "再来3个"}
+  {"click": "＋ 备选", "react": 3},
+  {"click": "在备选里比一比", "react": 3},
+  {"shot": "再来3个+备选对比"}
 ]
