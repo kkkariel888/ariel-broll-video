@@ -12,7 +12,7 @@
 """
 import io, json, os, shutil, subprocess, tarfile, tempfile, urllib.request
 
-REPO = "kkkariel888/ariel-broll-video"        # GitHub 仓库，比如 kkkariel888/ariel-broll-video
+REPO = "nini818726/ariel-broll-video"        # GitHub 仓库，比如 nini818726/ariel-broll-video
 MARKET = "ariel-broll-video"              # .claude-plugin/marketplace.json 里的 name
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL_DIR = os.path.dirname(HERE)

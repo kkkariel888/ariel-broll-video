@@ -9,7 +9,7 @@
 #      本机有 Codex 就：添加插件市场 + 安装
 #   4. 最后打印一张清单：哪些好了、哪些还要用户点一下
 set -u
-REPO="kkkariel888/ariel-broll-video"
+REPO="nini818726/ariel-broll-video"
 MARKET="ariel-broll-video"
 PLUGIN="broll-video-maker"
 SKILL=ariel-broll-video

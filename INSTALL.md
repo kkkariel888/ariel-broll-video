@@ -10,7 +10,7 @@
 
 ## 1. 能跑命令（Claude Code、Codex 命令行、Codex 桌面 app、连着电脑的 Claude app）：一条命令装好全部
 ```bash
-git clone --depth 1 https://github.com/kkkariel888/ariel-broll-video.git /tmp/ariel-broll-video && bash /tmp/ariel-broll-video/install.sh
+git clone --depth 1 https://github.com/nini818726/ariel-broll-video.git /tmp/ariel-broll-video && bash /tmp/ariel-broll-video/install.sh
 ```
 它会：
 1. 检查并安装 git、python3、ffmpeg，检查 Chrome
@@ -29,7 +29,7 @@ git clone --depth 1 https://github.com/kkkariel888/ariel-broll-video.git /tmp/ar
 
 ## 2. Claude 桌面 app / 网页版：在 app 里添加一次
 1. Customize → Plugins → Add marketplace（从 GitHub 仓库添加）
-2. 粘贴 `kkkariel888/ariel-broll-video`，**勾上 Sync automatically（自动同步）**
+2. 粘贴 `nini818726/ariel-broll-video`，**勾上 Sync automatically（自动同步）**
 3. 装 `broll-video-maker`
 
 能控制浏览器就直接帮用户打开页面填好；不能就把这 3 步发给用户。
