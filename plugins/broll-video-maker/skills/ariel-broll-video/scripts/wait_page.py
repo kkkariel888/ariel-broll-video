@@ -10,8 +10,9 @@
 已经看过的记在 事件.seen，不会重复叫。
   --file 模式.json   只等 <工作文件夹> 里出现这个文件（不读、不标记事件，给子任务用：不会抢走主 AI 的门铃）
 最后一行：STATUS=event（下面是新的事件，每行一个 JSON）/ STATUS=timeout（等太久，没人点）
-事件种类：mode（文字/动画）confirm（确认标黄）pick（选了风格）more（再来 3 个风格）save_style（存进我的风格）
-          review（某个画面通过 / 要改）approve_all（全部通过，出片）
+事件种类：mode（文字/动画）format（视频格式）source（风格从哪来：AI 挑 / 我的素材库 / 我的 GitHub 库）
+          confirm（点了「开始做」）pick（选了风格）more（再来 3 个风格）shortlist（备选里加/减）
+          save_style（加入素材库）approve_all（审稿没问题，出片）export（成片没问题，放进文件夹）
 """
 import argparse, json, os, sys, time
 

@@ -6,11 +6,10 @@
   （也支持 .docx / .txt / .md）
 
 页面从上到下：
-  1. 这期想要：文字讲解多一点 / 纯动画多一点（第一件事，不选不能确认）
-  2. 仿 Word 标黄（AI 先标好建议），点「确认标黄」
-  3. 选风格：3 个风格 × 同样 3 句原话 = 3×3 样图，点图放大；试过的风格全部留在页面上；「我的风格」里存过的直接点
-  4. 逐帧审稿表：每个画面一行（原话、时间、关键帧、动画直接播放、通过 / 要改），「全部通过，出片」
-  5. 成片：在页面上直接播放；「把这个风格存进我的风格」
+  1. 仿 Word 标黄（AI 先标好建议），顶上一排 4 步：标黄 → 文字 / 动画 → 视频格式 → 风格从哪来（AI 帮我挑 / 我的素材库 / 我的 GitHub 库）→「开始做」
+  2. 选风格：按来源分（参考图 DNA 提取 / GitHub / 内置风格库 / 我的素材库），每个风格「就这个 / 备选 / 加入素材库」；备选可以并排比
+  3. 审稿：分镜墙，一张逐帧图配一句口播，点开放大一张张翻；只有「没问题，出片」，要改在对话里说编号
+  4. 成片：小卡片，点开播放；「没问题，放进文件夹」才复制进 <用户的文件夹>/B-roll成片/
 页面上每点一下都写进 <工作文件夹>/事件.jsonl ——这就是「门铃」：AI 在后台跑 wait_page.py 等它，一点就醒，不用回对话发消息。
 AI 往工作文件夹写 风格排名.json / 逐帧审稿.json / 成片.json，页面每 1.5 秒自己刷新。
 """
@@ -198,6 +197,9 @@ def jsave(p, d):
 HOME = os.environ.get("BROLL_HOME", os.path.join(os.path.expanduser("~"), ".broll-video-maker"))
 MINE = os.environ.get("LEMO_MY_STYLES", os.path.join(os.path.expanduser("~"), "lemo-my-styles"))
 LIB = os.environ.get("LEMO_OPUSCAR_HOME", os.path.join(os.path.expanduser("~"), "lemo-opuscar"))
+GH = os.path.join(HOME, "github")   # 我的 GitHub 库：ghlib.py 存的仓库链接 + 风格描述 + 预览图
+SIZES = {"9:16": "1080x1920", "16:9": "1920x1080", "3:4": "1080x1440", "1:1": "1080x1080"}
+OUT_DIR = "B-roll成片"
 
 
 class Project:
@@ -219,9 +221,14 @@ class Project:
 
     # ---- 页面要的全部状态 ----
     def state(self):
-        st = {"mode": (jload(self.p("模式.json"), {}) or {}).get("mode")}
+        st = {"mode": (jload(self.p("模式.json"), {}) or {}).get("mode"),
+              "format": jload(self.p("格式.json")), "source": jload(self.p("风格来源.json")),
+              "shortlist": jload(self.p("备选.json"), []) or []}
         hl = jload(self.p("标黄结果.json"), {}) or {}
         st["confirmed"], st["count"] = bool(hl.get("confirmed")), hl.get("count", 0)
+        st["mine"] = self.mine()
+        st["github"] = self.github()
+        mine_slugs = {m["slug"] for m in st["mine"]}
         rank = jload(self.p("风格排名.json"), {}) or {}
         rows = []
         for c in rank.get("candidates", []):
@@ -231,22 +238,33 @@ class Project:
             while len(cells) < 3:
                 cells.append(None)
             rows.append({"slug": c.get("slug"), "name": c.get("name", c.get("slug")), "source": c.get("source", "lemo"),
-                         "why": c.get("why", ""), "cells": cells, "ready": all(cells)})
+                         "repo": c.get("repo", ""), "why": c.get("why", ""), "look": c.get("look", ""), "cells": cells,
+                         "ready": all(cells), "in_mine": c.get("slug") in mine_slugs})
         st["styles"] = {"sentences": rank.get("sentences", []), "rows": rows, "drawing": rank.get("drawing", False),
                         "note": rank.get("note", "")}
         st["chosen"] = jload(self.p("风格选择.json"))
-        st["mine"] = self.mine()
         rv = jload(self.p("逐帧审稿.json"), {}) or {}
         marks = jload(self.p("审稿结果.json"), {}) or {}
         rrows = []
         for r in rv.get("rows", []):
-            rrows.append(dict(r, frames=["files/" + urllib.parse.quote(x) for x in r.get("frames", []) if os.path.exists(self.p(x))],
-                              player=("player?p=" + urllib.parse.quote(r["page"]) + "&s=" + rv.get("size", "1080x1920")) if r.get("page") else None,
-                              mark=marks.get(r.get("no"))))
+            frames = []
+            for f in r.get("frames", []):
+                f = {"img": f} if isinstance(f, str) else dict(f)
+                if f.get("img") and os.path.exists(self.p(f["img"])):
+                    f["src"] = "files/" + urllib.parse.quote(f["img"])
+                    frames.append(f)
+            rrows.append(dict(r, frames=frames))
         st["review"] = {"rows": rrows, "size": rv.get("size", "1080x1920"), "note": rv.get("note", ""), "approved": bool(marks.get("_all"))}
         out = jload(self.p("成片.json"), {}) or {}
-        st["outputs"] = {"clips": [dict(c, url="out/" + urllib.parse.quote(c["file"])) for c in out.get("clips", []) if os.path.exists(os.path.join(self.folder, c["file"]))],
-                         "rendering": out.get("rendering", False), "note": out.get("note", "")}
+        clips = []
+        for c in out.get("clips", []):
+            fp = c.get("file", "")
+            if os.path.exists(self.p(fp)):
+                clips.append(dict(c, url="files/" + urllib.parse.quote(fp)))
+            elif os.path.exists(os.path.join(self.folder, fp)):   # 旧版写法：直接放在用户的文件夹里
+                clips.append(dict(c, url="out/" + urllib.parse.quote(fp)))
+        st["outputs"] = {"clips": clips, "rendering": out.get("rendering", False), "note": out.get("note", ""),
+                         "exported": bool(out.get("exported")), "folder": os.path.join(os.path.basename(self.folder), OUT_DIR)}
         return st
 
     def mine(self):
@@ -259,7 +277,23 @@ class Project:
                 thumbs = [f"my/{urllib.parse.quote(d)}/samples/{urllib.parse.quote(x)}" for x in sorted(os.listdir(os.path.join(MINE, d, "samples")))[:3]] \
                     if os.path.isdir(os.path.join(MINE, d, "samples")) else []
                 out.append({"slug": sj.get("slug", d), "name": sj.get("cn") or sj.get("name") or d, "thumbs": thumbs,
-                            "style_md": sj.get("ref_style_md") or os.path.join(MINE, d, "STYLE.md"), "source": "mine"})
+                            "style_md": sj.get("ref_style_md") or os.path.join(MINE, d, "STYLE.md"), "source": "mine",
+                            "from": sj.get("source") or "dna", "repo": sj.get("repo", ""), "created": sj.get("created", ""),
+                            "uses": sj.get("uses", 0)})
+        out.sort(key=lambda m: m.get("created", ""), reverse=True)
+        return out
+
+    def github(self):
+        out = []
+        if os.path.isdir(GH):
+            for d in sorted(os.listdir(GH)):
+                rj = jload(os.path.join(GH, d, "repo.json"))
+                if not rj:
+                    continue
+                pv = os.path.join(GH, d, "previews")
+                thumbs = [f"ghlib/{urllib.parse.quote(d)}/previews/{urllib.parse.quote(x)}" for x in sorted(os.listdir(pv))[:3]] if os.path.isdir(pv) else []
+                out.append(dict(rj, key=d, thumbs=thumbs))
+        out.sort(key=lambda r: r.get("saved", ""), reverse=True)
         return out
 
     # ---- 页面上的每一下 ----
@@ -269,22 +303,49 @@ class Project:
             if a == "mode":
                 m = "text" if d.get("mode") == "text" else "anim"
                 jsave(self.p("模式.json"), {"mode": m}); self.ring("mode", mode=m)
+            elif a == "format":
+                asp = d.get("aspect") if d.get("aspect") in SIZES else "9:16"
+                fm = {"aspect": asp, "size": SIZES[asp], "quality": "4k" if d.get("quality") == "4k" else "1080p"}
+                jsave(self.p("格式.json"), fm); self.ring("format", **fm)
+            elif a == "source":
+                kind = d.get("kind") if d.get("kind") in ("ai", "mine", "github") else "ai"
+                src = {"kind": kind}
+                if kind == "mine":
+                    m = next((x for x in self.mine() if x["slug"] == d.get("slug")), None)
+                    if not m:
+                        return
+                    src.update(slug=m["slug"], name=m["name"])
+                    self.choose(m)          # 用素材库里的风格 = 直接选定，跳过「选风格」
+                elif kind == "github":
+                    r = next((x for x in self.github() if x.get("repo") == d.get("repo")), None)
+                    if not r:
+                        return
+                    src.update(repo=r["repo"], url=r.get("url", ""), name=r.get("name", r["repo"]), local=r.get("local", ""))
+                if kind != "mine" and (jload(self.p("风格来源.json"), {}) or {}).get("kind") == "mine":
+                    try:
+                        os.remove(self.p("风格选择.json"))
+                    except OSError:
+                        pass
+                jsave(self.p("风格来源.json"), src); self.ring("source", **src)
+            elif a == "shortlist":
+                sl = [x for x in (jload(self.p("备选.json"), []) or []) if x != d.get("slug")]
+                if d.get("on"):
+                    sl.append(d.get("slug"))
+                jsave(self.p("备选.json"), sl); self.ring("shortlist", slug=d.get("slug"), on=bool(d.get("on")))
+            elif a == "export":
+                n = self.export()
+                if n:
+                    self.ring("export", count=n)
             elif a == "pick":
                 rank = {c.get("slug"): c for c in (jload(self.p("风格排名.json"), {}) or {}).get("candidates", [])}
                 c = rank.get(d.get("slug")) or next((x for x in self.mine() if x["slug"] == d.get("slug")), None)
                 if not c:
                     return
-                mode = (jload(self.p("模式.json"), {}) or {}).get("mode")
-                choice = {"confirmed": True, "slug": c["slug"], "name": c.get("name", c["slug"]), "source": c.get("source", "lemo"),
-                          "style_md": c.get("style_md", ""), "mode": mode, "samples": c.get("samples", []), "at": time.strftime("%Y-%m-%d %H:%M:%S")}
-                jsave(self.p("风格选择.json"), choice)
-                os.makedirs(HOME, exist_ok=True)
-                jsave(os.path.join(HOME, "last.json"), {k: choice[k] for k in ("slug", "name", "source", "style_md")})
-                self.ring("pick", slug=c["slug"], name=choice["name"])
+                self.choose(c)
             elif a == "more":
                 self.ring("more")
             elif a == "save_style":
-                self.ring("save_style", slug=self.save_style())
+                self.ring("save_style", slug=self.save_style(d.get("slug")))
             elif a == "review":
                 marks = jload(self.p("审稿结果.json"), {}) or {}
                 marks[d.get("no")] = {"ok": bool(d.get("ok")), "note": d.get("note", "")}
@@ -302,8 +363,45 @@ class Project:
             elif a == "confirm":
                 self.ring("confirm", count=d.get("count"))
 
-    def save_style(self):
-        c = jload(self.p("风格选择.json"))
+    def choose(self, c):
+        mode = (jload(self.p("模式.json"), {}) or {}).get("mode")
+        choice = {"confirmed": True, "slug": c["slug"], "name": c.get("name", c["slug"]), "source": c.get("source", "lemo"),
+                  "style_md": c.get("style_md", ""), "mode": mode, "samples": c.get("samples", []), "repo": c.get("repo", ""),
+                  "at": time.strftime("%Y-%m-%d %H:%M:%S")}
+        jsave(self.p("风格选择.json"), choice)
+        sjp = os.path.join(MINE, c["slug"], "style.json")
+        if c.get("source") == "mine" and os.path.exists(sjp):   # 素材库里记一下用过几次
+            sj = jload(sjp, {}) or {}
+            sj["uses"] = int(sj.get("uses", 0)) + 1
+            jsave(sjp, sj)
+        os.makedirs(HOME, exist_ok=True)
+        jsave(os.path.join(HOME, "last.json"), {k: choice[k] for k in ("slug", "name", "source", "style_md")})
+        self.ring("pick", slug=c["slug"], name=choice["name"])
+
+    def export(self):
+        """「没问题，放进文件夹」：把 <工作>/成片/ 里的视频复制进 <用户的文件夹>/B-roll成片/。"""
+        out = jload(self.p("成片.json"), {}) or {}
+        dst = os.path.join(self.folder, OUT_DIR)
+        n = 0
+        for c in out.get("clips", []):
+            src = self.p(c.get("file", ""))
+            if not os.path.isfile(src):
+                continue
+            os.makedirs(dst, exist_ok=True)
+            with open(src, "rb") as fi, open(os.path.join(dst, os.path.basename(src)), "wb") as fo:
+                fo.write(fi.read())
+            n += 1
+        if n:
+            out["exported"] = True
+            jsave(self.p("成片.json"), out)
+        return n
+
+    def save_style(self, slug=None):
+        """「加入素材库」：选风格页上任何一个风格都能存（带它的 3 张样图）；不给 slug 就存这期选定的。"""
+        rank = {c.get("slug"): c for c in (jload(self.p("风格排名.json"), {}) or {}).get("candidates", [])}
+        c = rank.get(slug) if slug else None
+        if not c:
+            c = jload(self.p("风格选择.json"))
         if not c:
             return None
         slug = re.sub(r"[^a-z0-9-]+", "-", str(c.get("slug", "style")).lower()).strip("-") or "style"
@@ -321,8 +419,10 @@ class Project:
         elif not mine_src:
             # Lemo / GitHub 的风格说明不复制，只记住在哪（作者的授权只让在本机读）
             with open(os.path.join(dst, "STYLE.md"), "w", encoding="utf-8") as fo:
-                fo.write(f"# {c.get('name', slug)}\n\n> 收藏自{ {'lemo': 'Lemo 风格库', 'github': 'GitHub'}.get(c.get('source'), '')}，完整说明在：{md}\n")
-        sj = {"slug": slug, "cn": c.get("name", slug), "source": c.get("source"), "created": time.strftime("%Y-%m-%d")}
+                fo.write(f"# {c.get('name', slug)}\n\n> 收藏自{ {'lemo': '内置风格库', 'github': 'GitHub'}.get(c.get('source'), '')}，完整说明在：{md}\n")
+        old = jload(os.path.join(dst, "style.json"), {}) or {}
+        sj = {"slug": slug, "cn": c.get("name", slug), "source": c.get("source"), "repo": c.get("repo", ""),
+              "created": old.get("created") or time.strftime("%Y-%m-%d"), "uses": old.get("uses", 0)}
         if not mine_src:
             sj["ref_style_md"] = md
         jsave(os.path.join(dst, "style.json"), sj)
@@ -371,7 +471,7 @@ def main():
     lock = threading.Lock()
     proj = Project(work, folder)
     BH = HOME
-    roots = {"files/": work, "out/": folder, "my/": MINE, "@film/": work,
+    roots = {"files/": work, "out/": folder, "my/": MINE, "ghlib/": GH, "@film/": work,
              "@fonts/": os.path.join(BH, "fonts"), "@kits/": os.path.join(BH, "kits")}
 
     class H(BaseHTTPRequestHandler):
@@ -392,7 +492,7 @@ def main():
             if not fp.startswith(os.path.normpath(base)) or not os.path.isfile(fp):
                 return self.send(404, "not found", "text/plain")
             ext = os.path.splitext(fp)[1].lower()
-            ctype = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".mp4": "video/mp4", ".html": "text/html; charset=utf-8",
+            ctype = {".png": "image/png", ".jpg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".jpeg": "image/jpeg", ".mp4": "video/mp4", ".html": "text/html; charset=utf-8",
                      ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml",
                      ".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf", ".otf": "font/otf", ".wasm": "application/wasm"}.get(ext, "application/octet-stream")
             with open(fp, "rb") as f:
