@@ -272,7 +272,7 @@ def render(page, size='1080x1920', out=None, keyframes=False, at=None, keytimes=
             if at: times, names = [float(x) for x in at], [f'{float(x):.2f}s' for x in at]
             else:
                 times = [float(x) for x in keytimes.split(',')] if keytimes else (cdp.js('window.KEYTIMES') or [dur * 0.25, dur * 0.6, dur - 0.04])
-                beats = bool(keytimes) or bool(cdp.js('!!window.BEATS'))   # 按「一两句一张」拆的分镜：文件就叫 1.png、2.png…（对应 B1-1、B1-2）
+                beats = bool(keytimes) or bool(cdp.js('!!window.BEATS'))   # 按「一两句一张」拆的分镜：文件就叫 1.png、2.png…（审稿页上按顺序编 1、2、3…）
                 names = None if beats else ['开场', '最满', '定格'] if len(times) == 3 else [f'{t:.2f}s' for t in times]
             single = out.suffix.lower() in ('.png', '.jpg') and len(times) == 1
             (out.parent if single else out).mkdir(parents=True, exist_ok=True)
