@@ -11,15 +11,15 @@
 <img alt="版本" src="https://img.shields.io/badge/version-1.1.2-blue?style=flat-square">
 <img alt="Claude" src="https://img.shields.io/badge/Claude-桌面%20%7C%20网页%20%7C%20Code-D97757?style=flat-square">
 <img alt="Codex" src="https://img.shields.io/badge/Codex-命令行%20%7C%20桌面-000000?style=flat-square">
-<img alt="License" src="https://img.shields.io/github/license/kkkariel888/ariel-broll-video?style=flat-square">
-<img alt="Stars" src="https://img.shields.io/github/stars/kkkariel888/ariel-broll-video?style=flat-square">
+<img alt="License" src="https://img.shields.io/github/license/nini818726/ariel-broll-video?style=flat-square">
+<img alt="Stars" src="https://img.shields.io/github/stars/nini818726/ariel-broll-video?style=flat-square">
 </p>
 
 <p>
 <a href="#快速开始">快速开始</a> ·
 <a href="#它是怎么工作的">工作流程</a> ·
 <a href="#常见问题">常见问题</a> ·
-<a href="https://github.com/kkkariel888/ariel-broll-video/issues">反馈问题</a>
+<a href="https://github.com/nini818726/ariel-broll-video/issues">反馈问题</a>
 </p>
 
 </div>
@@ -29,7 +29,7 @@
 > **一句话装好：** 复制下面这句话发给你的 Claude 或 Codex 就行。
 >
 > ```
-> 帮我装上这个：https://github.com/kkkariel888/ariel-broll-video
+> 帮我装上这个：https://github.com/nini818726/ariel-broll-video
 > ```
 >
 > 装一次，以后作者每次更新，你那边自动变成最新版。
@@ -105,7 +105,7 @@
 把这句话发给你的 Claude 或 Codex：
 
 ```
-帮我装上这个：https://github.com/kkkariel888/ariel-broll-video
+帮我装上这个：https://github.com/nini818726/ariel-broll-video
 ```
 
 AI 会照仓库里的 [INSTALL.md](INSTALL.md) 一口气装好全部东西，最后告诉你哪些好了、哪些还要你点一下。
@@ -123,25 +123,25 @@ AI 会照仓库里的 [INSTALL.md](INSTALL.md) 一口气装好全部东西，最
 **能用终端（Mac / Linux）**：一条命令装齐全部
 
 ```bash
-git clone --depth 1 https://github.com/kkkariel888/ariel-broll-video.git /tmp/ariel-broll-video && bash /tmp/ariel-broll-video/install.sh
+git clone --depth 1 https://github.com/nini818726/ariel-broll-video.git /tmp/ariel-broll-video && bash /tmp/ariel-broll-video/install.sh
 ```
 
-**Claude 桌面 app / 网页版**：Customize → Plugins → Add → Add marketplace → Add from a repository → 填 `kkkariel888/ariel-broll-video` → 打开 **Sync automatically** → Sync → 装 Broll video maker
+**Claude 桌面 app / 网页版**：Customize → Plugins → Add → Add marketplace → Add from a repository → 填 `nini818726/ariel-broll-video` → 打开 **Sync automatically** → Sync → 装 Broll video maker
 
 **Claude Code**：
 
 ```
-/plugin install broll-video-maker --marketplace kkkariel888/ariel-broll-video
+/plugin install broll-video-maker --marketplace nini818726/ariel-broll-video
 ```
 
 装完打开自动更新：`/plugin` → Marketplaces → 选 ariel-broll-video → Enable auto-update（第三方插件市场默认是关的；用上面「一条命令装齐」的方式装会自动帮你打开）
 
-**Codex 桌面 app**：Plugins → Add marketplace → 填 `kkkariel888/ariel-broll-video` → 装 broll-video-maker
+**Codex 桌面 app**：Plugins → Add marketplace → 填 `nini818726/ariel-broll-video` → 装 broll-video-maker
 
 **Codex 命令行**：
 
 ```bash
-codex plugin marketplace add kkkariel888/ariel-broll-video
+codex plugin marketplace add nini818726/ariel-broll-video
 codex plugin add broll-video-maker@ariel-broll-video
 ```
 
@@ -290,7 +290,7 @@ skill 本身能用。一键安装脚本目前只支持 Mac 和 Linux，Windows �
 - [ ] Windows 一键安装
 - [ ] 更多真实视频的完整测试
 
-想要什么功能，欢迎到 [Issues](https://github.com/kkkariel888/ariel-broll-video/issues) 提。
+想要什么功能，欢迎到 [Issues](https://github.com/nini818726/ariel-broll-video/issues) 提。
 
 <p align="right">(<a href="#readme-top">回到顶部</a>)</p>
 
@@ -298,7 +298,7 @@ skill 本身能用。一键安装脚本目前只支持 Mac 和 Linux，Windows �
 
 欢迎提建议、报问题、改代码：
 
-1. 到 [Issues](https://github.com/kkkariel888/ariel-broll-video/issues) 说说你遇到的问题或想法
+1. 到 [Issues](https://github.com/nini818726/ariel-broll-video/issues) 说说你遇到的问题或想法
 2. 想直接改：Fork 这个仓库 → 新建分支 → 改好后提 Pull Request（合并申请）
 
 作者发新版时用 `python3 tools/bump.py`，一次改齐 Claude 和 Codex 两边的版本号。
