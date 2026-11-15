@@ -352,6 +352,7 @@ table.rv{border-collapse:collapse;font-size:13.5px;min-width:980px;width:100%}
 <section class="view" id="v-style"><div class="panel">
   <h2>选风格</h2>
   <p class="hint" id="stHint" style="margin-top:4px"></p>
+  <div class="seg" id="grpBar" style="margin:4px 0 10px" hidden></div>
   <div class="grid a" id="grid"></div>
   <div class="row2" style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="big" id="more" type="button">再来 3 个风格</button></div>
   <div class="mine" id="mine" hidden><h2 style="font-size:16px">我的风格</h2><p class="hint">以前存下的风格，直接点「用这个」。</p><div class="list" id="mineList"></div></div>
@@ -664,11 +665,19 @@ function fitGrid(){
 }
 addEventListener("resize",fitGrid);
 const sent=x=>typeof x==="string"?x:((x||{}).text||"");
+// 「再来 3 个」以后按 3 个风格一组翻看：一屏永远是 3×3，新的一组来了自动跳过去，之前的点「第 1 组」还能看、还能选
+let GRP=0, seenRows=0;
 function drawStyles(){
-  const S=ST.styles, rows=S.rows, chosen=ST.chosen&&ST.chosen.slug; const N="①②③";
-  const ready=rows.filter(r=>r.ready).length;
+  const S=ST.styles, all=S.rows, chosen=ST.chosen&&ST.chosen.slug; const N="①②③";
+  const groups=Math.max(1,Math.ceil(all.length/3));
+  if(all.length>seenRows&&seenRows>0) GRP=groups-1; seenRows=all.length; GRP=Math.min(GRP,groups-1);
+  const bar=$("grpBar"); bar.hidden=groups<2;
+  bar.innerHTML=groups<2?"":Array.from({length:groups},(_,i)=>{const g=all.slice(i*3,i*3+3), done=g.every(r=>r.ready), has=g.some(r=>r.slug===chosen);
+    return `<button type="button" data-grp="${i}" aria-pressed="${i===GRP}">第 ${i+1} 组${has?" ✓":""}${done?"":" …"}</button>`;}).join("");
+  const rows=all.slice(GRP*3,GRP*3+3);
+  const ready=all.filter(r=>r.ready).length;
   $("stHint").innerHTML = !rows.length ? (bmode?`<span class="spin"></span>AI 正在挑 3 个风格，并用你这期的 3 句原话同时画样图，一般 2 分钟内…`:"先在最上面选「文字讲解多一点 / 纯动画多一点」，AI 就开始画。")
-    : (ready<rows.length||S.drawing ? `<span class="spin"></span>已画好 ${ready}/${rows.length} 个风格，画好一个出一个。` : "点图放大，点「就这个」选定。")+(S.note?" "+esc(S.note):"")+(rows.length?`<span class="legend">　每个风格画同样 3 句：`+[0,1,2].map(k=>`<i>${N[k]}</i> ${esc(sent(S.sentences[k]))}`).join("　")+"</span>":"");
+    : (ready<rows.length||S.drawing ? `<span class="spin"></span>已画好 ${ready}/${all.length} 个风格，画好一个出一个。` : "点图放大，点「就这个」选定。")+(S.note?" "+esc(S.note):"")+(rows.length?`<span class="legend">　每个风格画同样 3 句：`+[0,1,2].map(k=>`<i>${N[k]}</i> ${esc(sent(S.sentences[k]))}`).join("　")+"</span>":"");
   const SRC={lemo:"Lemo 风格库",mine:"我的风格",dna:"参考图 DNA",github:"GitHub 导入"};
   let h="";
   LBS.style.length=0;
@@ -693,10 +702,11 @@ function drawStyles(){
   $("mineList").innerHTML=M.map(m=>`<div class="mcard"><b>${esc(m.name)}</b><div class="th">${m.thumbs.map(t=>{LBS.style.push({src:t,cap:m.name});return `<img src="${esc(t)}" data-lb="${LBS.style.length-1}" alt="">`}).join("")}</div><button class="big${m.slug===chosen?"":" pri"}" data-pick="${esc(m.slug)}">${m.slug===chosen?"已选这个":"用这个"}</button></div>`).join("");
 }
 $("v-style").addEventListener("click",async e=>{
+  const gb=e.target.closest("button[data-grp]"); if(gb){GRP=+gb.dataset.grp; drawStyles(); return;}
   const lb=e.target.closest("[data-lb]"); if(lb){LB=LBS.style; openLB(+lb.dataset.lb);return;}
   const b=e.target.closest("button[data-pick]"); if(b){b.disabled=true; try{await act({act:"pick",slug:b.dataset.pick}); setStatus("风格已选好，AI 开始画每个画面。画好会出现在「③ 审稿」。",true);}catch(err){setStatus("没点成功："+err.message);} }
 });
-$("more").addEventListener("click",async()=>{$("more").disabled=true; try{await act({act:"more"}); setStatus("AI 再挑 3 个风格来画，画好接在下面，之前的都还在。");}catch(e){} setTimeout(()=>$("more").disabled=false,8000);});
+$("more").addEventListener("click",async()=>{$("more").disabled=true; try{await act({act:"more"}); setStatus("AI 再挑 3 个风格来画，放在新的一组；之前的点上面的「第 1 组」还能看、还能选。");}catch(e){} setTimeout(()=>$("more").disabled=false,8000);});
 
 /* 点图放大 */
 let lbI=0;
