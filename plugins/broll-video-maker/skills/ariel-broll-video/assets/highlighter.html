@@ -422,6 +422,18 @@ html,body{overflow-anchor:none}
 .wall .fr .im .cap .tm{display:block;font-size:10.5px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums}
 .wall .fr .im .cap .tx{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.6)}
 @media(max-width:700px){.wall,#rvBoards.wide .wall{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* 1.6.3：照用户参考图——图片下部白底黑边圆角字幕框，框上贴黑色小标签（编号 第几段 段名） */
+.wall .fr{border-radius:8px}
+.wall .fr .im .sub{position:absolute;left:6%;right:6%;bottom:4%;display:flex;flex-direction:column;align-items:flex-start}
+.sub .sbt{background:#1f1f1e;color:#fff;font-weight:700;border-radius:4px 4px 0 0;padding:1px 6px;font-size:10px;line-height:1.5;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-left:6px}
+.sub .sbx{align-self:stretch;background:#fff;color:#1f1f1e;border:1.5px solid #1f1f1e;border-radius:6px;padding:3px 6px;font-size:10.5px;line-height:1.4;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.wall .fr.p0 .sub .sbt{background:var(--accent)}
+/* 放大图：同样的框叠在图片底部里面（照参考图） */
+.lbw{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px}
+.lb .cap.sub{position:absolute;left:5%;right:5%;bottom:3.5%;display:flex;flex-direction:column;align-items:flex-start;max-width:none;text-shadow:none;font-family:var(--font-sans);text-align:left}
+.lb .cap.sub .sbt{font-size:clamp(11px,1.6vh,15px);padding:3px 12px;margin-left:12px}
+.lb .cap.sub .sbx{font-size:clamp(14px,2.4vh,22px);padding:.5em .8em;border-width:2.5px;border-radius:10px;-webkit-line-clamp:unset}
+.lb img{max-height:86vh}
 @media (max-width:520px){
   .grp{padding:0 4px}
   .tb{min-width:36px;padding:4px 3px}.tb small{font-size:10px}
@@ -555,7 +567,7 @@ html,body{overflow-anchor:none}
 <div class="lb vm" id="vm"><button class="x" type="button" title="关闭 (Esc)">×</button><video id="vmVideo" controls playsinline></video><div class="cap" id="vmCap"></div></div>
 
 <!-- 图片放大灯箱 -->
-<div class="lb" id="lb"><button class="x" type="button" title="关闭 (Esc)">×</button><button class="prev" type="button" title="上一张 (←)">‹</button><img id="lbImg" alt=""><div class="cap" id="lbCap"></div><button class="next" type="button" title="下一张 (→)">›</button></div>
+<div class="lb" id="lb"><button class="x" type="button" title="关闭 (Esc)">×</button><button class="prev" type="button" title="上一张 (←)">‹</button><div class="lbw"><img id="lbImg" alt=""><div class="cap" id="lbCap"></div></div><button class="next" type="button" title="下一张 (→)">›</button></div>
 
 <!-- 划选迷你弹窗 -->
 <div class="mini" id="mini"><button type="button" id="miniMark"><i></i>标黄</button><button type="button" id="miniClear">无颜色</button></div>
@@ -972,9 +984,13 @@ $("cmpBack").addEventListener("click",()=>{CMP=false; drawCmp(); drawTray(); req
 
 /* ---------- 点图放大（← → 翻页） ---------- */
 let lbI=0;
-function openLB(i){lbI=i; const x=LB[i]; if(!x) return; $("lbImg").src=x.src; $("lbCap").textContent=x.cap+"　（"+(i+1)+"/"+LB.length+"）"; $("lb").classList.add("on");}
+function openLB(i){lbI=i; const x=LB[i]; if(!x) return; $("lbImg").src=x.src;
+  const c=$("lbCap"); c.classList.toggle("sub",!!x.tag);
+  if(x.tag) c.innerHTML=`<span class="sbt">${esc(x.tag)}　（${i+1}/${LB.length}）</span><span class="sbx">${esc(x.txt)}</span>`;
+  else c.textContent=x.cap+"　（"+(i+1)+"/"+LB.length+"）";
+  $("lb").classList.add("on");}
 $("lb").addEventListener("click",e=>{ if(e.target.classList.contains("prev")) openLB((lbI-1+LB.length)%LB.length);
-  else if(e.target.classList.contains("next")) openLB((lbI+1)%LB.length); else if(e.target.id!=="lbImg") $("lb").classList.remove("on"); });
+  else if(e.target.classList.contains("next")) openLB((lbI+1)%LB.length); else if(!e.target.closest(".lbw")) $("lb").classList.remove("on"); });
 
 /* ---------- 审稿：分镜墙（一张逐帧图配一句口播） ---------- */
 let rvKey="";
@@ -990,9 +1006,10 @@ function drawReview(){
   if(key===rvKey) return; rvKey=key;
   LBS.rv.length=0; let n=0, h="";
   rows.forEach((r,i)=>r.frames.forEach((f,k)=>{ n++;
-    const txt=f.text||(k===0?r.text:""); LBS.rv.push({src:f.src,cap:`${n} · ${f.time||""}　${txt}`});
-    h+=`<div class="fr${k===0?" p0":""}" data-lb="${LBS.rv.length-1}" title="第 ${i+1} 段 · ${esc(r.time||"")}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy"><span class="k">${n}</span>
-      <div class="cap"><span class="tm">${esc(f.time||"")}</span><span class="tx">${esc(txt)}</span></div></div></div>`; }));
+    const txt=f.text||(k===0?r.text:""), tag=`${n}　第${i+1}段${r.title?" "+r.title:""}`;
+    LBS.rv.push({src:f.src,cap:`${n} · ${f.time||""}　${txt}`,tag:tag+(f.time?"　"+f.time:""),txt});
+    h+=`<div class="fr${k===0?" p0":""}" data-lb="${LBS.rv.length-1}" title="${esc(f.time||"")}"><div class="im" style="aspect-ratio:${W}/${H}"><img src="${esc(f.src)}" alt="${n}" loading="lazy">
+      <div class="sub"><span class="sbt">${esc(tag)}</span><span class="sbx">${esc(txt)}</span></div></div></div>`; }));
   $("rvBoards").innerHTML=`<div class="wall">${h}</div>`;
 }
 $("rvBoards").addEventListener("click",e=>{const lb=e.target.closest("[data-lb]"); if(lb){LB=LBS.rv; openLB(+lb.dataset.lb);}});
