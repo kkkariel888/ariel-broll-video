@@ -81,8 +81,10 @@ def _label(sec):
     return f"{sec // 60:02d}:{sec % 60:02d}" if sec < 3600 else f"{sec // 3600}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
 
 
-def read_srt(path, gap=1.0, max_len=120):
-    """剪映导出的 SRT：相邻字幕停顿不到 gap 秒就并成一段，每段不超过 max_len 字。"""
+def read_srt(path, gap=1.0, max_len=120, breaks=None):
+    """剪映导出的 SRT 合成段落。
+    breaks（AI 按意思给的分段点：每段第一条字幕是第几条，从 1 数）有就按它分——换一个意思才换段；
+    没有才退回老办法：相邻字幕停顿不到 gap 秒就并成一段，每段不超过 max_len 字。"""
     with open(path, encoding="utf-8-sig") as f:
         raw = f.read().replace("\r\n", "\n")
     cues = []
@@ -96,8 +98,10 @@ def read_srt(path, gap=1.0, max_len=120):
         if text:
             cues.append((_ts(a), _ts(b.split()[0]), text))
     blocks, cur, last_end = [], None, None
-    for t0, t1, text in cues:
-        if cur is None or (t0 - last_end) >= gap or len(cur["text"]) + len(text) > max_len:
+    bset = {int(x) for x in breaks} if breaks else None
+    for n, (t0, t1, text) in enumerate(cues, 1):
+        new = cur is None or (n in bset if bset else ((t0 - last_end) >= gap or len(cur["text"]) + len(text) > max_len))
+        if new:
             cur = {"type": "p", "text": "", "hl": [], "sug": [], "cues": [], "time": _label(t0)}
             blocks.append(cur)
         elif cur["text"]:
@@ -141,7 +145,8 @@ def write_docx(path, title, blocks, ranges):
             body.append(f"<w:p>{run(b['text'], bold=True, size=28)}</w:p>")
             continue
         t, rs, out, pos = b["text"], (ranges[pi] if pi < len(ranges) else []), [], 0
-        for s, e in sorted(rs):
+        for r in sorted(rs):
+            s, e = r[0], r[1]   # 页面存的是 [起, 止, 第几处]
             if s > pos: out.append(run(t[pos:s]))
             out.append(run(t[s:e], hl=True)); pos = e
         if pos < len(t): out.append(run(t[pos:]))
@@ -451,11 +456,29 @@ def main():
     ap.add_argument("--out", default=None, help="工作文件夹（中间文件都放这里，建议用 <用户的文件夹>/.broll）")
     ap.add_argument("--folder", default=None, help="用户的文件夹（成片放这里；默认是工作文件夹的上一层）")
     ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--paras", default=None, help="AI 按意思给的分段点 JSON：每段第一条字幕是第几条（从 1 数）。不填就找 <工作文件夹>/分段.json")
+    ap.add_argument("--check-paras", action="store_true", help="只打印每两段的交界处（上一段结尾｜下一段开头），给 AI 自查有没有把一句话切成两半，不开页面")
     a = ap.parse_args()
 
     src = os.path.abspath(a.transcript)
     low = src.lower()
-    blocks = read_docx(src) if low.endswith(".docx") else read_srt(src) if low.endswith(".srt") else read_text(src)
+    pfile = a.paras or os.path.join(os.path.abspath(a.out or os.path.dirname(src)), "分段.json")
+    breaks = None
+    if low.endswith(".srt") and os.path.exists(pfile):
+        try:
+            breaks = [int(x) for x in json.load(open(pfile, encoding="utf-8"))]
+        except Exception as e:
+            print(f"[提示] 分段.json 读不了（{e}），先按停顿分段", file=sys.stderr)
+    blocks = read_docx(src) if low.endswith(".docx") else read_srt(src, breaks=breaks) if low.endswith(".srt") else read_text(src)
+    if a.check_paras:
+        ps = [b for b in blocks if b["type"] == "p"]
+        print(f"共 {len(ps)} 段（{'按分段.json' if breaks else '没有分段.json，按停顿分的'}）")
+        for i, b in enumerate(ps, 1):
+            print(f"第{i}段 {b.get('time', '')}  {len(b['text'])} 字  开头：{b['text'][:18]}")
+        print("\n—— 交界处（｜左边是上一段结尾，右边是下一段开头；读起来是同一句话就是切错了，把分段点挪开）——")
+        for i in range(1, len(ps)):
+            print(f"第{i}/{i + 1}段：…{ps[i - 1]['text'][-16:]} ｜ {ps[i]['text'][:16]}…")
+        return
     if a.suggest:
         with open(a.suggest, encoding="utf-8") as f:
             apply_suggestions(blocks, json.load(f))
