@@ -22,7 +22,8 @@
   render.py --batch 任务.json --jobs 3 --report 出图结果.json
   任务.json 是数组，每个就是一次上面的命令：{"page":"风格样图/a_1.html","keyframes":true,"at":[2.4],"out":"风格样图/a_1.png","label":"…","size":"1080x1920"}
   不写 keyframes / at 就出视频。每做完一个打印一行「完成 3/9：…」（做完一个就能先给用户看），最后一行 STATUS=ok / STATUS=有问题
-自动质检（默认开，--no-qa 关）：在关键帧时间点查「字出界 / 字被裁掉 / 字太小 / 图片糊 / 整张空白」，
+自动质检（默认开，--no-qa 关）：在关键帧时间点查「字出界 / 字被裁掉 / 字太小 / 图片糊 / 整张空白」；
+  画面页引用了 节拍/B3.js 的，再做「跟嘴检查」：每个 at()/cue() 用到的词，说出来前后各截一帧，那一刻画面没变化就报，
   有问题打印「质检：…」，批量时写进报告的 qa 里——AI 先自己修好再给用户看。
 """
 import argparse, base64, http.server, json, os, pathlib, platform, re, shutil, socket, struct, subprocess, sys, tempfile, threading, time, urllib.request
@@ -224,6 +225,40 @@ def blank(png):
     m = sum(px) / len(px)
     return (sum((x - m) ** 2 for x in px) / len(px)) ** 0.5 < 3
 
+def _gray(png, w=120):
+    r = subprocess.run(['ffmpeg', '-loglevel', 'error', '-f', 'image2pipe', '-i', '-', '-vf', f'scale={w}:-2,format=gray', '-f', 'rawvideo', '-'],
+                       input=png, capture_output=True)
+    return r.stdout
+
+def changed(a, b):
+    """两张图有多少比例的地方变了（0～1）。"""
+    if not shutil.which('ffmpeg'): return 1.0
+    x, y = _gray(a), _gray(b)
+    if not x or len(x) != len(y): return 1.0
+    return sum(1 for i, j in zip(x, y) if abs(i - j) > 12) / len(x)
+
+def lipsync(cdp, draw, page, w, h, dur, qa):
+    """跟嘴检查：画面页引用了节拍（节拍/B3.js），就到每个 at()/cue() 用到的词说出来的前后各截一帧，
+    看那一刻画面有没有真的变化；没引用、一次没用、词找不到，都记进质检让 AI 自己改。"""
+    info = cdp.js('window.BEAT?{used:window.__beatUsed||[],miss:window.__beatMiss||[]}:null')
+    beat_file = page.parent / '节拍' / (page.stem + '.js')
+    if not info:
+        if beat_file.exists(): qa.append(f'跟嘴：没引用 节拍/{page.stem}.js，画面没跟着说话的快慢走')
+        return
+    if info['miss']: qa.append('跟嘴：这些词在这一处原话里找不到：' + '、'.join(dict.fromkeys(info['miss']))[:80])
+    seen, used = set(), []
+    for u in info['used']:
+        if u['w'] not in seen and u['t'] is not None: seen.add(u['w']); used.append(u)
+    if not used:
+        qa.append('跟嘴：引用了节拍，但一次也没用 at()/cue()，字和动效没卡在说到的那一刻'); return
+    for u in used[:8]:
+        t = float(u['t'])
+        if t < 0.35 or t > dur - 0.05: continue      # 一开口就说的词，开场本来就在动
+        draw(t - 0.45); a = cdp.shot(w, h)
+        draw(min(dur, t + 0.15)); b = cdp.shot(w, h)
+        if changed(a, b) < 0.001:
+            qa.append(f'跟嘴：「{u["w"]}」在 {t:.1f}s 说出来，那一刻画面没变化（动作要在说到前 0.25 秒开始）')
+
 def esc(s):
     return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
@@ -280,6 +315,7 @@ def render(page, size='1080x1920', out=None, keyframes=False, at=None, keytimes=
             for i, t in enumerate(times):
                 fname = f'{i + 1}.png' if names is None else f'{i + 1}_{names[i]}.png'
                 draw(t); png = cdp.shot(w, h); check(t, png); frames.append((out if single else out / fname, png))
+            if qa is not None and fn: lipsync(cdp, draw, page, w, h, dur, qa)
             for p, png in frames:
                 if label: png = with_label(cdp, png, w, h, label, tmp)
                 p.write_bytes(png); results.append(str(p))
@@ -289,6 +325,7 @@ def render(page, size='1080x1920', out=None, keyframes=False, at=None, keytimes=
             if qa is not None:
                 for t in (cdp.js('window.KEYTIMES') or [dur * 0.25, dur * 0.6, dur - 0.04]):
                     draw(float(t)); check(float(t), cdp.shot(w, h))
+                if fn: lipsync(cdp, draw, page, w, h, dur, qa)
             part = out.with_name('.' + out.stem + '.part' + out.suffix)   # 渲染完才改名，页面上不会出现半截视频
             n = max(1, round(dur * fps))
             ff = subprocess.Popen(['ffmpeg', '-loglevel', 'error', '-y', '-f', 'image2pipe', '-framerate', str(fps), '-c:v', 'png', '-i', '-',
