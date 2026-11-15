@@ -2,6 +2,7 @@
 """风格 DNA 和外部风格的工具。只用 Python 自带库 + ffmpeg + git。
 
   dna.py colors <参考图或视频> [--k 6]          程序量出主色（色值 + 占比 + 亮暗），比肉眼准
+  dna.py palette <参考图>                         10 色色卡：3 主色 + 5 辅助色 + 2 点缀色（风格 DNA 的配色就用它）
   dna.py cuts <参考视频>                          量出每 5 秒换几次画面（只有视频能量）
   dna.py license <GitHub 链接或本地文件夹>         下载到 ~/.broll-video-maker/imports/ 并判断许可证能不能用
   dna.py save <当期文件夹/风格草稿/xxx>            用户满意了：存进「我的风格」（~/lemo-my-styles/，和 Lemo 共用）
@@ -51,6 +52,28 @@ def colors(path, k=6):
     ink = max(out, key=lambda c: abs(c['lightness'] - bg['lightness']))
     return {'colors': out, 'accents': accents, 'suggest': {'bg': bg['hex'], 'ink': ink['hex'], 'accent': acc['hex']},
             'note': '色值是程序量的；只用来定配色关系，不照搬原图的画面'}
+
+def palette(path):
+    """10 色色卡：占比前 3 = 主色，接着 5 个 = 辅助色，鲜艳小块里 2 个 = 点缀色。"""
+    hx = lambda c: '#%02X%02X%02X' % tuple(round(v) for v in c)
+    far = lambda a, b, d=34: sum((a[i] - b[i]) ** 2 for i in range(3)) > d * d
+    big = []
+    for c, sh in sorted(kmeans(pixels(path, 128), 18), key=lambda x: -x[1]):  # 太接近的颜色只留占比大的那个
+        if all(far(c, b) for b, _ in big): big.append((c, sh))
+    px = pixels(path, 160)
+    vivid = [q for q in px if (lambda h, l, s: s > 0.4 and 0.15 < l < 0.85)(*colorsys.rgb_to_hls(q[0] / 255, q[1] / 255, q[2] / 255))]
+    acc = sorted(kmeans(vivid, 3), key=lambda x: -colorsys.rgb_to_hls(*(v / 255 for v in x[0]))[2]) if len(vivid) > 20 else []
+    accents = []
+    for c, _ in acc:
+        if len(accents) < 2 and all(far(c, a, 40) for a in accents): accents.append(c)
+    rest = [c for c, _ in big if all(far(c, a, 20) for a in accents)]
+    accents = [hx(c) for c in accents]
+    while len(accents) < 2:  # 原图没有鲜艳色：拿饱和度最高的补，并写明是补的
+        c = max(rest[3:] or rest, key=lambda c: colorsys.rgb_to_hls(*(v / 255 for v in c))[2]); rest.remove(c); accents.append(hx(c) + '（补）')
+    main_, aux = rest[:3], rest[3:8]
+    n = len(main_) + len(aux) + len(accents)
+    return {'count': n, 'main': [hx(c) for c in main_], 'aux': [hx(c) for c in aux], 'accent': accents,
+            'note': ('原图用色少，只量出 %d 个不重复的颜色，就用这些，不硬凑；' % n if n < 10 else '') + '这些是这套风格的全部用色：画面只许用它们（可调明暗），不许另加颜色；色卡只定配色，不定画什么'}
 
 def cuts(path):
     need_ffmpeg()
@@ -127,6 +150,7 @@ def main():
     if a[0] == 'colors':
         k = int(a[a.index('--k') + 1]) if '--k' in a else 6
         print(json.dumps(colors(a[1], k), ensure_ascii=False, indent=1))
+    elif a[0] == 'palette': print(json.dumps(palette(a[1]), ensure_ascii=False, indent=1))
     elif a[0] == 'cuts': print(json.dumps(cuts(a[1]), ensure_ascii=False))
     elif a[0] == 'license': license_check(a[1])
     elif a[0] == 'save': save(a[1])
