@@ -265,7 +265,9 @@ class Project:
         for c in out.get("clips", []):
             fp = c.get("file", "")
             if os.path.exists(self.p(fp)):
-                clips.append(dict(c, url="files/" + urllib.parse.quote(fp)))
+                pv = c.get("preview", "")   # 带原声的预览（beats.py voice 做的）：页面上播放用它，放进文件夹的还是没声音的那份
+                play = pv if pv and os.path.exists(self.p(pv)) else fp
+                clips.append(dict(c, url="files/" + urllib.parse.quote(play)))
             elif os.path.exists(os.path.join(self.folder, fp)):   # 旧版写法：直接放在用户的文件夹里
                 clips.append(dict(c, url="out/" + urllib.parse.quote(fp)))
         st["outputs"] = {"clips": clips, "rendering": out.get("rendering", False), "note": out.get("note", ""),

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""没有 SRT 时用：在本机把口播视频听写成带时间的字幕（不上传，只用 CPU，Claude Code / Cowork / Codex 都能跑）。
+"""没有 SRT 时用（有 SRT 时加 --times-only，只量每个字的时间，字幕还用用户的）：在本机把口播视频听写成带时间的字幕（不上传，只用 CPU，Claude Code / Cowork / Codex 都能跑）。
 有逐字稿（.docx / .txt / .md）就用逐字稿的字和标点，只借听写的时间，错字基本没有；逐字稿里视频没说的句子自动跳过。
 
 用法：
   transcribe.py 口播.mov --out <用户的文件夹>                      只听写
   transcribe.py 口播.mov --script 逐字稿.docx --out <用户的文件夹>  听写 + 用逐字稿纠字
+  transcribe.py 口播.mov --times-only --out <工作>                    已经有剪映 SRT：只出 逐字时间.json，不出字幕
 输出：
   <文件夹>/字幕_自动识别.srt   一句一行，后面当 SRT 用
   <文件夹>/逐字时间.json       每个字说出来的那一秒，[[字, 秒], ...]，卡关键词用
@@ -224,6 +225,7 @@ def ts(sec):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('video'); ap.add_argument('--script'); ap.add_argument('--out', required=True)
+    ap.add_argument('--times-only', action='store_true', help='已经有 SRT：只量每个字是第几秒说的（逐字时间.json），不出字幕')
     a = ap.parse_args()
     out = pathlib.Path(a.out).expanduser(); out.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
@@ -237,6 +239,10 @@ def main():
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     if not chars: die('没听到说话声。视频是不是没声音？')
+    if a.times_only:
+        (out / '逐字时间.json').write_text(json.dumps(chars, ensure_ascii=False), encoding='utf-8')
+        print(f'{len(chars)} 个字的时间，用时 {time.time() - t0:.0f} 秒，存在 {out / "逐字时间.json"}')
+        print('STATUS=ok'); return
     status, lines = 'ok', None
     if a.script:
         lines, ratio = lines_from_script(chars, ends, read_script(a.script))
